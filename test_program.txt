@@ -1,0 +1,14 @@
+programa test;
+
+vars {
+    x, y: entero;
+    z: flotante;
+}
+
+inicio {
+    x = 10;
+    y = 20;
+    z = x + y * 2;
+    escribe(x, y, z);
+}
+fin
