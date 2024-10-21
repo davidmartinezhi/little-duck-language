@@ -134,12 +134,21 @@ class little_duckListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by little_duckParser#exp_list.
-    def enterExp_list(self, ctx:little_duckParser.Exp_listContext):
+    # Enter a parse tree produced by little_duckParser#print_list.
+    def enterPrint_list(self, ctx:little_duckParser.Print_listContext):
         pass
 
-    # Exit a parse tree produced by little_duckParser#exp_list.
-    def exitExp_list(self, ctx:little_duckParser.Exp_listContext):
+    # Exit a parse tree produced by little_duckParser#print_list.
+    def exitPrint_list(self, ctx:little_duckParser.Print_listContext):
+        pass
+
+
+    # Enter a parse tree produced by little_duckParser#print_item.
+    def enterPrint_item(self, ctx:little_duckParser.Print_itemContext):
+        pass
+
+    # Exit a parse tree produced by little_duckParser#print_item.
+    def exitPrint_item(self, ctx:little_duckParser.Print_itemContext):
         pass
 
 

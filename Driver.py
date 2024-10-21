@@ -5,20 +5,12 @@ It takes an input file as a command-line argument, tokenizes it with a lexer, pa
 
 import sys
 from antlr4 import *  # Importing ANTLR4 runtime library
-from generated.little_duckLexer import little_duckLexer  # Importing the generated lexer for Little Duck language
-from generated.little_duckParser import little_duckParser  # Importing the generated parser for Little Duck language
-from generated.little_duckListener import little_duckListener
-class LittleDuckPrintListener(little_duckListener):
-    """
-    Custom listener that extends the default listener to
-    perform actions when entering and exiting parse tree nodes.
-    """
-    def enterPrograma(self, ctx):
-        program_name = ctx.ID().getText()
-        print(f"Entering program: {program_name}")
-
-    def exitPrograma(self, ctx):
-        print("Exiting program.")
+from generated.little_duckLexer import (
+    little_duckLexer,
+)  # Importing the generated lexer for Little Duck language
+from generated.little_duckParser import (
+    little_duckParser,
+)  # Importing the generated parser for Little Duck language
 
 
 def main(argv):
@@ -33,28 +25,23 @@ def main(argv):
     input_stream = FileStream(argv[1])
 
     # Initialize the lexer with the input stream (breaks the input into tokens)
-    lexer = little_duckLexer(input_stream)
+    lexer = little_duckLexer(input_stream)  # Converts input text into tokens
 
     # Create a stream of tokens from the lexer output
-    stream = CommonTokenStream(lexer)
+    stream = CommonTokenStream(
+        lexer
+    )  # Wraps the lexer output into a token stream for the parser
 
     # Initialize the parser with the token stream (uses the tokens to create a parse tree)
-    parser = little_duckParser(stream)
+    parser = little_duckParser(stream)  # Instance of parser
 
     # Start parsing the input according to the grammar rule 'programa' (the entry point of the grammar)
-    tree = parser.programa()
-
-    # Initialize the listener and walker
-    listener = LittleDuckPrintListener()
-    walker = ParseTreeWalker()
-
-    # Walk the parse tree with the custom listener
-    walker.walk(listener, tree)
+    tree = parser.programa()  # 'programa' (initial symbol of grammar) method is called
 
     # Print the parse tree in string format
     print(tree.toStringTree(recog=parser))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Call the main function with the command-line arguments
-    main(sys.argv) # python3 Driver.py test_program.txt
+    main(sys.argv)  # python3 Driver.py test_program.txt

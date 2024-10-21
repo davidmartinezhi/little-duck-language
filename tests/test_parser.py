@@ -1,26 +1,36 @@
-# tests/test_parser.py
+"""
+Test suite for the Little Duck language parser.
+
+This module contains tests for the ANTLR-generated parser of the Little Duck language.
+It verifies that the parser correctly accepts valid code and rejects invalid code according
+to the language grammar.
+"""
 
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.error.ErrorListener import ErrorListener
 from generated.little_duckLexer import little_duckLexer
 from generated.little_duckParser import little_duckParser
 
+
 class SyntaxErrorListener(ErrorListener):
     """
     Custom error listener to capture syntax errors during parsing.
+    ErrorListener is inherited from the ErrorListener base class.
     """
 
     def __init__(self):
-        super(SyntaxErrorListener, self).__init__()
-        self.syntax_errors = []
+        super(
+            SyntaxErrorListener, self
+        ).__init__()  # Calls constructor of the base class
+        self.syntax_errors = []  # Store syntax errors that appear in the analysis
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         """
-        Called when a syntax error is encountered.
+        Called automatically when a syntax error is encountered in the parser.
 
         Args:
             recognizer: The parser instance.
-            offendingSymbol: The offending token.
+            offendingSymbol: The offending token (Token that raised the syntax error).
             line (int): Line number where the error occurred.
             column (int): Column number where the error occurred.
             msg (str): The error message.
@@ -28,6 +38,7 @@ class SyntaxErrorListener(ErrorListener):
         """
         error_message = f"Syntax error at line {line}, column {column}: {msg}"
         self.syntax_errors.append(error_message)
+
 
 def parse_input(input_text):
     """
@@ -42,16 +53,16 @@ def parse_input(input_text):
     Raises:
         Exception: If syntax errors are encountered during parsing.
     """
-    input_stream = InputStream(input_text)
-    lexer = little_duckLexer(input_stream)
+    input_stream = InputStream(input_text)  # Input that will by used by lexer
+    lexer = little_duckLexer(input_stream)  # Converts input text into tokens
 
     # Attach custom error listener to the lexer
-    lexer_error_listener = SyntaxErrorListener()
-    lexer.removeErrorListeners()
-    lexer.addErrorListener(lexer_error_listener)
+    lexer_error_listener = SyntaxErrorListener()  # Create instance of error listener
+    lexer.removeErrorListeners()  # Remove default listener
+    lexer.addErrorListener(lexer_error_listener)  # Add the new listener
 
-    token_stream = CommonTokenStream(lexer)
-    parser = little_duckParser(token_stream)
+    token_stream = CommonTokenStream(lexer)  # Wraps lexer, to be consumed by parser
+    parser = little_duckParser(token_stream)  # Instance of parser
 
     # Attach custom error listener to the parser
     parser_error_listener = SyntaxErrorListener()
@@ -59,32 +70,38 @@ def parse_input(input_text):
     parser.addErrorListener(parser_error_listener)
 
     # Attempt to parse the input
-    tree = parser.programa()
+    tree = parser.programa()  # 'programa' (initial symbol of grammar) method is called
 
     # Collect syntax errors from both lexer and parser
-    syntax_errors = lexer_error_listener.syntax_errors + parser_error_listener.syntax_errors
+    syntax_errors = (
+        lexer_error_listener.syntax_errors + parser_error_listener.syntax_errors
+    )
 
     # Check for syntax errors
-    if syntax_errors:
-        raise Exception("\n".join(syntax_errors))
+    if syntax_errors:  # If we have errors
+        raise Exception(
+            "\n".join(syntax_errors)
+        )  # Raises exception with all errors concatenated
 
-    return tree
+    return tree  # return tree of syntactic analysis
+
 
 # Test functions
 
+
 def test_variable_declarations():
     """Test parsing of variable declarations."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x: entero;
         y, z: flotante;
     }
     inicio {
-    escribe(x,y);
+    escribe("Variables declared successfully");
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
@@ -94,7 +111,7 @@ def test_variable_declarations():
 
 def test_assignment_statements():
     """Test parsing of assignment statements."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x, y: entero;
@@ -102,18 +119,20 @@ def test_assignment_statements():
     inicio {
         x = 10;
         y = x + 5;
+        escribe("Variables assigned successfully");
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
     except Exception as e:
         assert False, f"Parsing failed with exception: {e}"
 
+
 def test_arithmetic_expressions():
     """Test parsing of arithmetic expressions."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x, y, z: entero;
@@ -123,16 +142,17 @@ def test_arithmetic_expressions():
         z = (x + y) * 2;
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
     except Exception as e:
         assert False, f"Parsing failed with exception: {e}"
 
+
 def test_conditional_statements():
     """Test parsing of conditional statements with and without 'sino'."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x, y: entero;
@@ -144,20 +164,21 @@ def test_conditional_statements():
             escribe(y);
         }
         si (x == y) haz {
-            escribe(xisequaltoy);
+            escribe("x is equal to y");
         }
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
     except Exception as e:
         assert False, f"Parsing failed with exception: {e}"
 
+
 def test_loop_statements():
     """Test parsing of loop statements."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x: entero;
@@ -168,16 +189,17 @@ def test_loop_statements():
         }
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
     except Exception as e:
         assert False, f"Parsing failed with exception: {e}"
 
+
 def test_function_calls():
     """Test parsing of function calls without 'retorno' in functions."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         z: entero;
@@ -190,16 +212,17 @@ def test_function_calls():
         suma(5, 10);
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
     except Exception as e:
         assert False, f"Parsing failed with exception: {e}"
 
+
 def test_full_program():
     """Test parsing of a comprehensive program combining multiple constructs."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x, y: entero;
@@ -215,25 +238,26 @@ def test_full_program():
         suma(x, y);
         z = x * 1.5;
         si (z > 50) haz {
-            escribe(zesmayorque50);
+            escribe("z es mayor que 50");
         } sino haz {
-            escribe(zesmenoroiguala50);
+            escribe("z es menor o igual a 50");
         }
         mientras (x < y) haz {
             x = x + 1;
         }
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
         assert tree is not None, "Parsing failed: tree is None"
     except Exception as e:
         assert False, f"Parsing failed with exception: {e}"
 
+
 def test_syntax_error_missing_semicolon():
     """Test parsing with a missing semicolon to ensure syntax errors are caught."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x: entero
@@ -242,17 +266,22 @@ def test_syntax_error_missing_semicolon():
         x = 10
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
-        assert False, "Parsing succeeded but was expected to fail due to missing semicolons."
+        assert (
+            False
+        ), "Parsing succeeded but was expected to fail due to missing semicolons."
     except Exception as e:
         error_message = str(e)
-        assert "missing ';'" in error_message or "mismatched input" in error_message, f"Unexpected error message: {e}"
+        assert (
+            "missing ';'" in error_message or "mismatched input" in error_message
+        ), f"Unexpected error message: {e}"
+
 
 def test_invalid_identifier():
     """Test parsing with an invalid identifier to check lexer errors."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         1x: entero;
@@ -260,17 +289,23 @@ def test_invalid_identifier():
     inicio {
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
-        assert False, "Parsing succeeded but was expected to fail due to invalid identifier."
+        assert (
+            False
+        ), "Parsing succeeded but was expected to fail due to invalid identifier."
     except Exception as e:
         error_message = str(e)
-        assert "token recognition error" in error_message or "extraneous input" in error_message, f"Unexpected error message: {e}"
+        assert (
+            "token recognition error" in error_message
+            or "extraneous input" in error_message
+        ), f"Unexpected error message: {e}"
+
 
 def test_unexpected_token():
     """Test parsing with an unexpected token to ensure error handling."""
-    input_text = '''
+    input_text = """
     programa test;
     vars {
         x: entero;
@@ -279,20 +314,24 @@ def test_unexpected_token():
         x = @10;
     }
     fin
-    '''
+    """
     try:
         tree = parse_input(input_text)
-        assert False, "Parsing succeeded but was expected to fail due to unexpected token."
+        assert (
+            False
+        ), "Parsing succeeded but was expected to fail due to unexpected token."
     except Exception as e:
         error_message = str(e)
-        assert "token recognition error" in error_message or "no viable alternative" in error_message, f"Unexpected error message: {e}"
+        assert (
+            "token recognition error" in error_message
+            or "no viable alternative" in error_message
+        ), f"Unexpected error message: {e}"
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # List of test functions to run
     tests = [
-        test_minimal_program,
         test_variable_declarations,
-        test_invalid_function_declaration_with_return,
         test_assignment_statements,
         test_arithmetic_expressions,
         test_conditional_statements,

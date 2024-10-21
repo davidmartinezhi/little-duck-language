@@ -62,11 +62,16 @@ asigna
     ;
 
 imprime
-    : ESCRIBE LPAREN exp_list RPAREN SEMI
+    : ESCRIBE LPAREN print_list RPAREN SEMI
     ;
 
-exp_list
-    : exp (COMMA exp)*
+print_list
+    : print_item (COMMA print_item)*
+    ;
+
+print_item
+    : expresion
+    | STRING_LITERAL
     ;
 
 ciclo
@@ -87,7 +92,7 @@ llamada
     ;
 
 arg_list
-    : exp (COMMA exp)*
+    : expresion (COMMA expresion)*
     |   /* empty */
     ;
 
@@ -162,6 +167,10 @@ CTE_ENT
 
 CTE_FLOT
     : [0-9]+ '.' [0-9]+
+    ;
+
+STRING_LITERAL
+    : '"' ~["\r\n]* '"'
     ;
 
 /* Whitespace and Comments */
