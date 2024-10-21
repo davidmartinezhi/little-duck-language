@@ -5,8 +5,20 @@ It takes an input file as a command-line argument, tokenizes it with a lexer, pa
 
 import sys
 from antlr4 import *  # Importing ANTLR4 runtime library
-from little_duckLexer import little_duckLexer  # Importing the generated lexer for Little Duck language
-from little_duckParser import little_duckParser  # Importing the generated parser for Little Duck language
+from generated.little_duckLexer import little_duckLexer  # Importing the generated lexer for Little Duck language
+from generated.little_duckParser import little_duckParser  # Importing the generated parser for Little Duck language
+from generated.little_duckListener import little_duckListener
+class LittleDuckPrintListener(little_duckListener):
+    """
+    Custom listener that extends the default listener to
+    perform actions when entering and exiting parse tree nodes.
+    """
+    def enterPrograma(self, ctx):
+        program_name = ctx.ID().getText()
+        print(f"Entering program: {program_name}")
+
+    def exitPrograma(self, ctx):
+        print("Exiting program.")
 
 
 def main(argv):
@@ -31,6 +43,13 @@ def main(argv):
 
     # Start parsing the input according to the grammar rule 'programa' (the entry point of the grammar)
     tree = parser.programa()
+
+    # Initialize the listener and walker
+    listener = LittleDuckPrintListener()
+    walker = ParseTreeWalker()
+
+    # Walk the parse tree with the custom listener
+    walker.walk(listener, tree)
 
     # Print the parse tree in string format
     print(tree.toStringTree(recog=parser))
