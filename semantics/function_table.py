@@ -55,7 +55,7 @@ class FunctionTable:
         """
         return self.functions.get(func_id, None)
 
-    def add_function_param(self, func_id, param):
+    def add_function_param(self, func_id: str | None, param):
         """
         Adds a new parameter to a function in the functions dictionary.
 
