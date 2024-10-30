@@ -51,6 +51,7 @@ class LittleDuckCustomListener(little_duckListener):
         print("\n=============") 
         print(f"Entering program: {program_name}") # Prints program name
         print("=============\n") 
+    
     def exitPrograma(self, ctx: little_duckParser.ProgramaContext):
         """
         Exit the root of the parse tree (program).
@@ -178,7 +179,7 @@ class LittleDuckCustomListener(little_duckListener):
                 operand = self.operand_stack.pop() # Pops the operand from the stack
                 quadruple = ('=', operand, None, var_name) # Creates the quadruple
                 self.quadruple_manager.push(quadruple) # Pushes the quadruple to the quadruple manager
-                print(f"Generated quadruple: {quadruple}") 
+                print(f"Generated quadruple: {quadruple}")
             except TypeError as e:
                 print(f"Type mismatch in assignment to variable '{var_name}'. {str(e)}")
 
@@ -229,14 +230,14 @@ class LittleDuckCustomListener(little_duckListener):
         Determines the type of a term (multiplication/division).
         """
         if len(ctx.factor()) > 1:
-            left_type = self.get_factor_type(ctx.factor(0))
-            right_type = self.get_factor_type(ctx.factor(1))
-            operator = ctx.getChild(1).getText()
+            left_type = self.get_factor_type(ctx.factor(0)) # Gets the type of the left factor
+            right_type = self.get_factor_type(ctx.factor(1)) # Gets the type of the right factor
+            operator = ctx.getChild(1).getText() # Gets the operator
             try:
-                result_type = self.semantic_cube.get_type(left_type, right_type, operator)
+                result_type = self.semantic_cube.get_type(left_type, right_type, operator) # Gets the result type of the operation
                 # Push the result onto the stacks
-                self.create_temp_quadruple(left_type, right_type, operator, result_type)
-                return result_type
+                self.create_temp_quadruple(left_type, right_type, operator, result_type) # Creates a temporary quadruple
+                return result_type # Returns the result type
             except TypeError as e:
                 print(f"Error: Incompatible types in term: {left_type} {operator} {right_type}")
                 return 'error'
@@ -247,34 +248,34 @@ class LittleDuckCustomListener(little_duckListener):
         """
         Determines the type of a factor (variable, constant, or expression).
         """
-        if ctx.ID():
-            var_name = ctx.ID().getText()
-            scope = self.variable_table.find_scope(var_name)
+        if ctx.ID(): # Checks if the factor is a variable
+            var_name = ctx.ID().getText() # Gets the variable name
+            scope = self.variable_table.find_scope(var_name) # Finds the scope where the variable is declared
             if scope:
-                var_type = self.variable_table.get_variable_type(scope, var_name)
+                var_type = self.variable_table.get_variable_type(scope, var_name) # Gets the type of the variable
                 # Push the variable onto the operand and type stacks
-                self.operand_stack.push(var_name)
-                self.type_stack.push(var_type)
+                self.operand_stack.push(var_name) # Pushes the variable name onto the operand stack
+                self.type_stack.push(var_type) # Pushes the variable type onto the type stack
                 return var_type
             else:
                 print(f"Error: Variable '{var_name}' is not declared.")
                 return 'error'
-        elif ctx.cte():
-            if ctx.cte().CTE_ENT():
-                value = ctx.cte().CTE_ENT().getText()
-                var_type = 'entero'
+        elif ctx.cte(): # Checks if the factor is a constant
+            if ctx.cte().CTE_ENT(): # Checks if the constant is an integer
+                value = ctx.cte().CTE_ENT().getText() # Gets the integer value
+                var_type = 'entero' # Sets the type to integer
             elif ctx.cte().CTE_FLOT():
-                value = ctx.cte().CTE_FLOT().getText()
-                var_type = 'flotante'
+                value = ctx.cte().CTE_FLOT().getText() # Gets the float value
+                var_type = 'flotante' # Sets the type to float
             else:
-                print("Error: Invalid constant.")
+                print("Error: Invalid constant.") # Prints an error message
                 return 'error'
             # Push the constant onto the operand and type stacks
-            self.operand_stack.push(value)
-            self.type_stack.push(var_type)
+            self.operand_stack.push(value) # Pushes the constant value onto the operand stack
+            self.type_stack.push(var_type) # Pushes the constant type onto the type stack
             return var_type
         elif ctx.expresion():
-            return self.get_expression_type(ctx.expresion())
+            return self.get_expression_type(ctx.expresion()) # Gets the type of the expression
         else:
             print("Error: Invalid factor.")
             return 'error'
