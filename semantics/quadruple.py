@@ -1,23 +1,37 @@
+# semantics/quadruple.py
+
 class Quadruple:
-    """
-    A class to manage a collection of quadruples.
-
-    Attributes:
-        quadruples (list): A list that stores the quadruples.
-        quadruple_count (int): A counter for the number of quadruples stored.
-    """
-
     def __init__(self):
-        """Initializes the instance with an empty list and sets the counter to zero."""
         self.quadruples = []
-        self.quadruple_count = 0
+        self.labels = {}
+        self.label_counter = 0  # To ensure unique label names
 
     def push(self, quadruple):
         """
-        Adds a quadruple to the list and increments the counter.
-
-        Args:
-            quadruple: The quadruple to be added to the list.
+        Adds a quadruple to the list.
         """
         self.quadruples.append(quadruple)
-        self.quadruple_count += 1
+
+    def add_label(self, label_name=None):
+        """
+        Assigns a label to the current position in the quadruples.
+        If no label name is provided, generates a unique label.
+        """
+        if not label_name:
+            label_name = f"label_{self.label_counter}"
+            self.label_counter += 1
+        self.labels[label_name] = len(self.quadruples)
+        self.push(('label', label_name, None, None))
+        return label_name
+
+    def get_quadruples(self):
+        """
+        Returns the list of quadruples.
+        """
+        return self.quadruples
+
+    def get_labels(self):
+        """
+        Returns the dictionary of labels with their positions.
+        """
+        return self.labels

@@ -1,131 +1,63 @@
+# semantics/variable_table.py
+
 class VariableTable:
-    """
-    Class representing the variable table used by the compiler to manage variables
-    in different scopes (e.g., global and local scopes). This table keeps track of
-    variable names, types, memory addresses, and values.
-
-    Attributes:
-    variables (dict): A dictionary where keys are scope names and values are
-                      dictionaries of variables in that scope.
-    """
-
     def __init__(self):
-        """
-        Initializes the VariableTable with a 'global' scope.
-        """
-        self.variables = {"global": {}}
+        # Structure: {scope: {var_name: {'type': var_type, 'initialized': bool}}}
+        self.variables = {}
+        self.current_scope = "global"
 
     def set_scope(self, scope):
         """
-        Creates a new scope in the variable table if it doesn't already exist.
-
-        Args:
-            scope (str): The name of the new scope to be added.
-
-        Complexity:
-            runtime: O(1)
+        Sets the current scope. Initializes the scope in the variable table if it doesn't exist.
         """
+        self.current_scope = scope
         if scope not in self.variables:
-            # Initialize a new scope with an empty dictionary
             self.variables[scope] = {}
 
-    def add_variable(self, scope, name, var_type):
+    def add_variable(self, scope, var_name, var_type):
         """
-        Adds a new variable to the specified scope in the variable table.
-
-        Args:
-            scope (str): The scope in which the variable is declared.
-            name (str): The name of the variable.
-            var_type (str): The data type of the variable (e.g., 'int', 'float').
-
-        Raises:
-            Exception: If the variable already exists in the given scope.
-
-        Complexity:
-            runtime: O(1)
+        Adds a variable to the specified scope with its type.
         """
-        if name in self.variables[scope]:
-            # Variable already declared in this scope
-            raise Exception(f"Variable {name} already declared.")
-        # Assign the variable to the corresponding scope and save its type
-        self.variables[scope][name] = {
-            'type': var_type
-        }
+        if scope not in self.variables:
+            self.variables[scope] = {}
+        self.variables[scope][var_name] = {'type': var_type, 'initialized': False}
 
-    def get_variable_type(self, scope, name):
+    def get_variable_type(self, scope, var_name):
         """
         Retrieves the type of a variable from the specified scope.
-
-        Args:
-            scope (str): The scope in which to look for the variable.
-            name (str): The name of the variable.
-
-        Returns:
-            str or None: The type of the variable if found, else None.
-
-        Complexity:
-            runtime: O(1)
         """
-        return self.variables[scope][name].get('type', None)
+        return self.variables.get(scope, {}).get(var_name, {}).get('type')
 
-    def get_variable_value(self, scope, name):
+    def find_scope(self, var_name):
         """
-        Retrieves the current value of a variable from the specified scope.
-
-        Args:
-            scope (str): The scope in which to look for the variable.
-            name (str): The name of the variable.
-
-        Returns:
-            Any or None: The value of the variable if it has been set, else None.
-
-        Complexity:
-            runtime: O(1)
+        Finds the scope in which a variable is declared.
+        Searches from the current scope outward to the global scope.
         """
-        return self.variables[scope][name].get('value', None)
+        scopes = list(self.variables.keys())
+        if self.current_scope in scopes:
+            scopes.remove(self.current_scope)
+            scopes.insert(0, self.current_scope)
+        for scope in scopes:
+            if var_name in self.variables.get(scope, {}):
+                return scope
+        return None
 
-    def set_variable_value(self, scope, name, value):
+    def is_initialized(self, scope, var_name):
         """
-        Sets or updates the value of a variable in the specified scope.
-
-        Args:
-            scope (str): The scope in which the variable exists.
-            name (str): The name of the variable.
-            value (Any): The value to assign to the variable.
-
-        Complexity:
-            runtime: O(1)
+        Checks if a variable has been initialized.
         """
-        self.variables[scope][name]['value'] = value
+        return self.variables.get(scope, {}).get(var_name, {}).get('initialized', False)
+
+    def set_initialized(self, scope, var_name):
+        """
+        Marks a variable as initialized.
+        """
+        if var_name in self.variables.get(scope, {}):
+            self.variables[scope][var_name]['initialized'] = True
 
     def clean_variables(self, scope):
         """
-        Clears all variables from the specified scope.
-
-        Args:
-            scope (str): The scope from which to remove all variables.
-
-        Complexity:
-            runtime: O(n), n being the number of variables
+        Removes all variables from the specified scope.
         """
-        self.variables[scope].clear()
-
-    def find_scope(self, name):
-        """
-        Searches for the scope where a variable with the given name is declared.
-
-        Args:
-            name (str): The name of the variable to search for.
-
-        Returns:
-            str or None: The name of the scope where the variable is found,
-                         or None if the variable is not found in any scope.
-
-        Complexity:
-            runtime: O(n), with n being the number of scopes
-        """
-        # Iterate over all scopes to find the variable
-        for scope in self.variables:
-            if name in self.variables[scope]:
-                return scope  # Return the scope where the variable is found
-        return None  # Variable not found in any scope
+        if scope in self.variables:
+            del self.variables[scope]
