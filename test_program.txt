@@ -1,24 +1,15 @@
 programa test;
 vars {
-    x, y: entero;
+    x, y: entero
     z: flotante;
 }
-func suma(a: entero, b: entero) {
-    x = a + b;
-    escribe(x);
-}
+
 inicio {
     x = 10;
     y = 20;
-    suma(x, y);
     z = x + 1.5 * 2;
-    si (z > 50) haz {
-        escribe("z es mayor que 50");
-    } sino haz {
-        escribe("z es menor o igual a 50");
-    }
-    mientras (x < y) haz {
-        x = x + 1;
-    }
+    escribe(x);
+    escribe("The value of x is:", x);
+    escribe(x + y * z, " is the result.");
 }
 fin

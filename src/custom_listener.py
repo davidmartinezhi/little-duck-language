@@ -217,6 +217,7 @@ class LittleDuckCustomListener(little_duckListener):
             try:
                 result_type = self.semantic_cube.get_type(left_type, right_type, operator)
                 # Push the result onto the stacks
+                print(f"Generated quadruple: {left_type} {operator} {right_type} -> {result_type}")
                 self.create_temp_quadruple(left_type, right_type, operator, result_type)
                 return result_type
             except TypeError as e:
@@ -236,6 +237,7 @@ class LittleDuckCustomListener(little_duckListener):
             try:
                 result_type = self.semantic_cube.get_type(left_type, right_type, operator) # Gets the result type of the operation
                 # Push the result onto the stacks
+                print(f"Generated quadruple: {left_type} {operator} {right_type} -> {result_type}")
                 self.create_temp_quadruple(left_type, right_type, operator, result_type) # Creates a temporary quadruple
                 return result_type # Returns the result type
             except TypeError as e:
@@ -300,6 +302,38 @@ class LittleDuckCustomListener(little_duckListener):
 
     #************************************** OTHER STATEMENTS **************************************#
     # methods for loops, conditionals, print statements, etc.
+    def exitImprime(self, ctx: little_duckParser.ImprimeContext):
+        """
+        Handles the exit of a print statement.
+        Generates quadruples for each item to be printed.
+        """
+        # Retrieve all print items from the print_list
+        print_items = ctx.print_list().print_item()
+        
+        for item in print_items:
+            if item.expresion():
+                # Handle expression
+                expr_type = self.get_expression_type(item.expresion())
+                if expr_type != 'error':
+                    # Retrieve the operand from the operand stack
+                    expr_operand = self.operand_stack.pop()
+                    # Generate quadruple for print operation
+                    quadruple = ('print', expr_operand, None, None)
+                    self.quadruple_manager.push(quadruple)
+                    print(f"Generated quadruple for printing expression: {quadruple}")
+                else:
+                    print("Error: Cannot print an expression with type 'error'.")
+            elif item.STRING_LITERAL():
+                # Handle string literal
+                string_value = item.STRING_LITERAL().getText()
+                # Remove the surrounding quotes from the string
+                string_value = string_value[1:-1]
+                # Generate quadruple for printing a string literal
+                quadruple = ('print_str', string_value, None, None)
+                self.quadruple_manager.push(quadruple)
+                print(f"Generated quadruple for printing string: {quadruple}")
+            else:
+                print("Error: Invalid print item encountered.")
 
     #************************************** SCOPE MANAGEMENT **************************************#
     def enterCuerpo(self, ctx: little_duckParser.CuerpoContext):
