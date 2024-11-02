@@ -8,46 +8,28 @@ class Stack:
 
     def push(self, element):
         """
-        Adds an element to the top of the stack.
-
-        Args:
-            element (Any): Element to add.
+        Add an element to the top of the stack.
         """
         self.stack.append(element)
 
     def pop(self):
         """
-        Removes and returns the element at the top of the stack.
-
-        Returns:
-            Any: Element at the top of the stack.
-
-        Raises:
-            Exception: If the stack is empty.
+        Remove and return the element at the top of the stack.
         """
         if not self.is_empty():
             return self.stack.pop()
-        raise Exception("Stack is empty")
+        raise Exception("Cannot pop from empty stack.")
 
     def is_empty(self):
         """
-        Checks if the stack is empty.
-
-        Returns:
-            bool: True if empty, False otherwise.
+        Check if the stack is empty.
         """
         return len(self.stack) == 0
 
     def peek(self):
         """
-        Returns the element at the top of the stack without removing it.
-
-        Returns:
-            Any: Element at the top of the stack.
-
-        Raises:
-            Exception: If the stack is empty.
+        Return the element at the top of the stack without removing it.
         """
         if not self.is_empty():
             return self.stack[-1]
-        raise Exception("Stack is empty")
+        raise Exception("Cannot peek into empty stack.")

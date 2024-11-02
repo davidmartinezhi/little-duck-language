@@ -1,15 +1,11 @@
 programa test;
 vars {
-    x, y: entero
-    z: flotante;
+    x, y, z : entero;
 }
-
 inicio {
     x = 10;
-    y = 20;
-    z = x + 1.5 * 2;
-    escribe(x);
-    escribe("The value of x is:", x);
-    escribe(x + y * z, " is the result.");
+    y = 2;
+    z = x + y;
+    escribe(z)
 }
 fin

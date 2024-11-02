@@ -88,5 +88,5 @@ class SemanticCube:
         result = self.cube.get((left_type, right_type, operator), 'error')  # Return result type or 'error'
         if result == 'error':
             # If the operation is invalid, raise a TypeError
-            raise TypeError(f"Invalid operation: {left_type} {operator} {right_type}")
+            raise TypeError(f"Invalid operation: Cannot perform '{operator}' between types '{left_type}' and '{right_type}'.")
         return result
