@@ -184,7 +184,6 @@ class LittleDuckCustomListener(little_duckListener):
             condition_result = (
                 self.operand_stack.pop()
             )  # Pop the condition result from the operand stack
-            print(f"Operand in operand stack: {condition_result}")
             quadruple = (
                 "GOTOF",
                 condition_result,
@@ -336,6 +335,7 @@ class LittleDuckCustomListener(little_duckListener):
             left_type = self.get_exp_type(ctx.exp(0))
             right_type = self.get_exp_type(ctx.exp(1))
             operator = ctx.op_comparacion().getText()
+            print(f"Comparing {left_type} {operator} {right_type}")
             try:
                 result_type = self.semantic_cube.get_type(
                     left_type, right_type, operator
@@ -360,6 +360,7 @@ class LittleDuckCustomListener(little_duckListener):
             left_type = self.get_termino_type(ctx.termino(0))
             right_type = self.get_termino_type(ctx.termino(1))
             operator = ctx.getChild(1).getText()
+            print(f"Exp Type {left_type} {operator} {right_type}")
             try:
                 result_type = self.semantic_cube.get_type(
                     left_type, right_type, operator
@@ -386,6 +387,7 @@ class LittleDuckCustomListener(little_duckListener):
             left_type = self.get_factor_type(ctx.factor(0))
             right_type = self.get_factor_type(ctx.factor(1))
             operator = ctx.getChild(1).getText()
+            print(f"Termino type {left_type} {operator} {right_type}")
             try:
                 result_type = self.semantic_cube.get_type(
                     left_type, right_type, operator
