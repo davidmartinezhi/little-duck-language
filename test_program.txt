@@ -1,21 +1,11 @@
-programa test_program;
+programa test_print_statements;
 vars {
-    x, y : entero;
-    z : flotante;
+    a, b : entero;
 }
 inicio {
-    x = 10;
-    y = 5;
-    si (x > y) haz {
-        escribe("x is greater than y");
-    } sino haz {
-        escribe("x is less than or equal to y");
-    }
-    mientras (y > 0) haz {
-        escribe(y);
-        y = y - 1;
-    }
-    z = x / 2.0;
-    escribe("The value of z is:", z);
+    a = 2;
+    b = 3;
+    escribe("Hello, World!");
+    escribe(a + b);
 }
 fin

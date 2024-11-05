@@ -58,6 +58,12 @@ class SemanticCube:
             ('flotante', 'entero', '!='): 'bool',    # Example: 5.5 (flotante) != 5 (entero) -> True (bool)
             ('flotante', 'flotante', '!='): 'bool',  # Example: 5.5 (flotante) != 5.5 (flotante) -> False (bool)
 
+            # Equal comparison
+            ('entero', 'entero', '=='): 'bool',      # Example: 5 (entero) != 3 (entero) -> True (bool)
+            ('entero', 'flotante', '=='): 'bool',    # Example: 5 (entero) != 5.0 (flotante) -> False (bool)
+            ('flotante', 'entero', '=='): 'bool',    # Example: 5.5 (flotante) != 5 (entero) -> True (bool)
+            ('flotante', 'flotante', '=='): 'bool',  # Example: 5.5 (flotante) != 5.5 (flotante) -> False (bool)
+
             # Assignment operations
             ('entero', 'entero', '='): 'entero',        # Example: int_var (entero) = 5 (entero) -> Valid, int_var is entero
             ('entero', 'flotante', '='): 'error',    # Example: int_var (entero) = 5.5 (flotante) -> Error, cannot assign flotante to entero
