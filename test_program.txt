@@ -1,11 +1,11 @@
-programa test_print_statements;
+programa myProgram;
 vars {
     a, b : entero;
 }
+
 inicio {
-    a = 2;
-    b = 3;
-    escribe("Hello, World!");
+    a = 5;
+    b = 10;
     escribe(a + b);
 }
 fin
