@@ -1,66 +1,165 @@
-class MemorySegment:
-    GLOBAL_START = 1000
-    LOCAL_START = 5000
-    TEMP_START = 9000
-    CONSTANT_START = 13000
-
-    INT_OFFSET = 0
-    FLOAT_OFFSET = 1000
-    BOOL_OFFSET = 2000
-    STRING_OFFSET = 3000
-
-    SEGMENT_SIZE = 1000
-
 class VirtualMemory:
+    """
+    Class representing the virtual memory of the compiler.
+    Manages different memory segments and their allocations.
+    """
+    
     def __init__(self):
-        self.next_global_int = MemorySegment.GLOBAL_START + MemorySegment.INT_OFFSET
-        self.next_global_float = MemorySegment.GLOBAL_START + MemorySegment.FLOAT_OFFSET
-        self.next_local_int = MemorySegment.LOCAL_START + MemorySegment.INT_OFFSET
-        self.next_local_float = MemorySegment.LOCAL_START + MemorySegment.FLOAT_OFFSET
-        self.next_temp_int = MemorySegment.TEMP_START + MemorySegment.INT_OFFSET
-        self.next_temp_float = MemorySegment.TEMP_START + MemorySegment.FLOAT_OFFSET
-        self.next_constant_int = MemorySegment.CONSTANT_START + MemorySegment.INT_OFFSET
-        self.next_constant_float = MemorySegment.CONSTANT_START + MemorySegment.FLOAT_OFFSET
+        """
+        Initializes memory segments with their starting addresses and storage dictionaries.
+        """
+        # Starting addresses for each memory segment
+        self.global_int = 1000
+        self.global_float = 2000
+        self.local_int = 3000
+        self.local_float = 4000
+        self.temp_int = 5000
+        self.temp_float = 6000
+        self.constant_int = 7000
+        self.constant_float = 8000
+        self.constant_string = 9000
+        
+        # Memory segments as dictionaries
+        self.global_memory = {}
+        self.local_memory = {}
+        self.temp_memory = {}
+        self.constants_memory = {}
+        
+        # Constants table to avoid duplicates
         self.constants_table = {}
-
+    
     def get_address(self, var_type, scope):
+        """
+        Allocates a virtual address for a variable based on its type and scope.
+        
+        Args:
+            var_type (str): The type of the variable ('entero', 'flotante').
+            scope (str): The scope of the variable ('global', 'local').
+        
+        Returns:
+            int: The allocated virtual address.
+        """
         if scope == "global":
             if var_type == "entero":
-                addr = self.next_global_int
-                self.next_global_int += 1
+                address = self.global_int
+                self.global_int += 1
             elif var_type == "flotante":
-                addr = self.next_global_float
-                self.next_global_float += 1
-        else:
+                address = self.global_float
+                self.global_float += 1
+            self.global_memory[address] = None
+        elif scope == "local":
             if var_type == "entero":
-                addr = self.next_local_int
-                self.next_local_int += 1
+                address = self.local_int
+                self.local_int += 1
             elif var_type == "flotante":
-                addr = self.next_local_float
-                self.next_local_float += 1
-        return addr
-
+                address = self.local_float
+                self.local_float += 1
+            self.local_memory[address] = None
+        return address
+    
     def get_temp_address(self, var_type):
+        """
+        Allocates a virtual address for a temporary variable based on its type.
+        
+        Args:
+            var_type (str): The type of the temporary variable ('entero', 'flotante').
+        
+        Returns:
+            int: The allocated virtual address.
+        """
         if var_type == "entero":
-            addr = self.next_temp_int
-            self.next_temp_int += 1
+            address = self.temp_int
+            self.temp_int += 1
         elif var_type == "flotante":
-            addr = self.next_temp_float
-            self.next_temp_float += 1
-        return addr
-
+            address = self.temp_float
+            self.temp_float += 1
+        self.temp_memory[address] = None
+        return address
+    
     def get_constant_address(self, value, var_type):
+        """
+        Allocates a virtual address for a constant value. If the constant already exists, returns its address.
+        
+        Args:
+            value (str): The constant value.
+            var_type (str): The type of the constant ('entero', 'flotante', 'string').
+        
+        Returns:
+            int: The allocated virtual address.
+        """
         if value in self.constants_table:
             return self.constants_table[value]
         else:
             if var_type == "entero":
-                addr = self.next_constant_int
-                self.next_constant_int += 1
+                address = self.constant_int
+                self.constant_int += 1
             elif var_type == "flotante":
-                addr = self.next_constant_float
-                self.next_constant_float += 1
+                address = self.constant_float
+                self.constant_float += 1
             elif var_type == "string":
-                addr = MemorySegment.CONSTANT_START + MemorySegment.STRING_OFFSET + len(self.constants_table)
-            self.constants_table[value] = addr
-            return addr
-
+                address = self.constant_string
+                self.constant_string += 1
+            self.constants_memory[address] = value
+            self.constants_table[value] = address
+            return address
+    
+    def set_value(self, address, value):
+        """
+        Sets the value at a given virtual address in the appropriate memory segment.
+        
+        Args:
+            address (int): The virtual address.
+            value: The value to set.
+        """
+        if address in self.global_memory:
+            self.global_memory[address] = value
+        elif address in self.local_memory:
+            self.local_memory[address] = value
+        elif address in self.temp_memory:
+            self.temp_memory[address] = value
+        elif address in self.constants_memory:
+            self.constants_memory[address] = value
+        else:
+            print(f"Address {address} not found in any memory segment.")
+    
+    def get_value(self, address):
+        """
+        Retrieves the value stored at a given virtual address.
+        
+        Args:
+            address (int): The virtual address.
+        
+        Returns:
+            The value stored at the address.
+        """
+        if address in self.global_memory:
+            return self.global_memory[address]
+        elif address in self.local_memory:
+            return self.local_memory[address]
+        elif address in self.temp_memory:
+            return self.temp_memory[address]
+        elif address in self.constants_memory:
+            return self.constants_memory[address]
+        else:
+            print(f"Address {address} not found in any memory segment.")
+            return None
+    
+    def print_memory(self):
+        """
+        Prints the memory addresses and their values for all memory segments.
+        """
+        print("\n===== Global Memory =====")
+        for address, value in self.global_memory.items():
+            print(f"Address {address}: {value}")
+        
+        print("\n===== Local Memory =====")
+        for address, value in self.local_memory.items():
+            print(f"Address {address}: {value}")
+        
+        print("\n===== Temporary Memory =====")
+        for address, value in self.temp_memory.items():
+            print(f"Address {address}: {value}")
+        
+        print("\n===== Constants Memory =====")
+        for address, value in self.constants_memory.items():
+            print(f"Address {address}: {value}")

@@ -72,26 +72,25 @@ class LittleDuckCustomListener(little_duckListener):
     def exitPrograma(self, ctx: little_duckParser.ProgramaContext):
         """
         Exit the root of the parse tree (program).
-        Perform cleanup and output the generated quadruples.
+        Perform cleanup, output the generated quadruples, and print memory contents.
         """
-        self.variable_table.clean_variables(
-            self.current_scope
-        )  # Clean up variables in the global scope
+        self.variable_table.clean_variables(self.current_scope)
         print("\n=============")
-        print("Exiting program")  # Print exit message
+        print("Exiting program")
         print("=============\n")
 
         # Add END quadruple to signify the end of the program
         end_quadruple = ("END", None, None, None)
         self.quadruple_manager.push(end_quadruple)
-        print(
-            f"Generated END quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {end_quadruple}"
-        )
+        print(f"Generated END quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {end_quadruple}")
 
         # Print the generated quadruples
         print("\nGenerated Quadruples:")
         for idx, quad in enumerate(self.quadruple_manager.quadruples):
             print(f"{idx}: {quad}")
+
+        # Print the memory addresses with their values
+        self.virtual_memory.print_memory()
 
     # ************************************** VARIABLES **************************************#
     # Variable declaration - add variables to scope
@@ -108,20 +107,30 @@ class LittleDuckCustomListener(little_duckListener):
         print("=====Exit variable declaration=====\n")
 
     def exitVar_decl(self, ctx: little_duckParser.Var_declContext):
-        var_type = ctx.tipo().getText()
-        ids = ctx.id_list().ID()
-        for id_token in ids:
-            var_name = id_token.getText()
+        """
+        Exit a variable declaration.
+        Assign types to variables, allocate memory addresses, and add them to the variable table.
+        """
+        var_type = ctx.tipo().getText()  # Get the type of the variable
+        ids = ctx.id_list().ID()         # Get the list of variable identifiers
+        for id_token in ids:             # Iterate over each variable identifier
+            var_name = id_token.getText()  # Get the text of the ID token
             if var_name in self.variable_table.variables[self.current_scope]:
                 print(f"Error: Variable '{var_name}' is already declared in scope '{self.current_scope}'.")
             else:
+                # Allocate memory address for the variable
                 address = self.virtual_memory.get_address(var_type, self.current_scope)
+                # Add the variable to the variable table with its address
                 self.variable_table.add_variable(self.current_scope, var_name, var_type, address)
-                print(f"Variable declaration: {var_name} : {var_type}, address: {address}")
+                print(f"Variable declaration: {var_name} : {var_type}, Address: {address}")
 
     # ************************************** ASSIGNMENT **************************************#
     # Assignment statement
     def exitAsigna(self, ctx: little_duckParser.AsignaContext):
+        """
+        Exit an assignment statement.
+        Perform type checking, generate assignment quadruples, and update memory.
+        """
         var_name = ctx.ID().getText()
         scope = self.variable_table.find_scope(var_name, self.current_scope)
         if not scope:
@@ -131,11 +140,17 @@ class LittleDuckCustomListener(little_duckListener):
             var_type = self.variable_table.get_variable_type(scope, var_name)
             try:
                 result_type = self.semantic_cube.get_type(var_type, expr_type, "=")
-                operand = self.operand_stack.pop()
+                # Retrieve the operand's address from the operand stack
+                operand_address = self.operand_stack.pop()
+                # Get the variable's address
                 var_address = self.variable_table.get_variable_address(scope, var_name)
-                quadruple = ("=", operand, None, var_address)
+                # Generate the assignment quadruple using addresses
+                quadruple = ("=", operand_address, None, var_address)
                 self.quadruple_manager.push(quadruple)
                 print(f"Generated quadruple: {quadruple}")
+                # Update memory with the new value
+                value = self.virtual_memory.get_value(operand_address)
+                self.virtual_memory.set_value(var_address, value)
             except TypeError as e:
                 print(f"Type mismatch in assignment to variable '{var_name}'. {str(e)}")
 
@@ -378,50 +393,75 @@ class LittleDuckCustomListener(little_duckListener):
             return self.get_factor_type(ctx.factor(0))
 
     def get_factor_type(self, ctx: little_duckParser.FactorContext):
-        if ctx.ID():
-            var_name = ctx.ID().getText()
-            scope = self.variable_table.find_scope(var_name, self.current_scope)
-            if scope:
-                var_type = self.variable_table.get_variable_type(scope, var_name)
-                address = self.variable_table.get_variable_address(scope, var_name)
+            """
+            Determine the type of a factor (variable, constant, or expression) and manage operands.
+            """
+            if ctx.ID():
+                var_name = ctx.ID().getText()
+                scope = self.variable_table.find_scope(var_name, self.current_scope)
+                if scope:
+                    var_type = self.variable_table.get_variable_type(scope, var_name)
+                    var_address = self.variable_table.get_variable_address(scope, var_name)
+                    # Push the variable's address onto the operand stack
+                    self.operand_stack.push(var_address)
+                    self.type_stack.push(var_type)
+                    return var_type
+                else:
+                    print(f"Error: Variable '{var_name}' is not declared.")
+                    return "error"
+            elif ctx.cte():
+                if ctx.cte().CTE_ENT():
+                    value = ctx.cte().CTE_ENT().getText()
+                    var_type = "entero"
+                elif ctx.cte().CTE_FLOT():
+                    value = ctx.cte().CTE_FLOT().getText()
+                    var_type = "flotante"
+                else:
+                    print("Error: Invalid constant.")
+                    return "error"
+                # Allocate or get the address of the constant
+                address = self.virtual_memory.get_constant_address(value, var_type)
+                # Push the constant's address onto the operand stack
                 self.operand_stack.push(address)
                 self.type_stack.push(var_type)
                 return var_type
+            elif ctx.expresion():
+                return self.get_expression_type(ctx.expresion())
             else:
-                print(f"Error: Variable '{var_name}' is not declared.")
+                print("Error: Invalid factor.")
                 return "error"
-        elif ctx.cte():
-            if ctx.cte().CTE_ENT():
-                value = ctx.cte().CTE_ENT().getText()
-                var_type = "entero"
-            elif ctx.cte().CTE_FLOT():
-                value = ctx.cte().CTE_FLOT().getText()
-                var_type = "flotante"
-            else:
-                print("Error: Invalid constant.")
-                return "error"
-            address = self.virtual_memory.get_constant_address(value, var_type)
-            self.operand_stack.push(address)
-            self.type_stack.push(var_type)
-            return var_type
-        elif ctx.expresion():
-            return self.get_expression_type(ctx.expresion())
-        else:
-            print("Error: Invalid factor.")
-            return "error"
-
-
 
     def create_temp_quadruple(self, left_type, right_type, operator, result_type):
+        """
+        Create a temporary quadruple for intermediate operations, allocate memory, and update stacks.
+        """
         try:
             right_operand = self.operand_stack.pop()
             left_operand = self.operand_stack.pop()
+            # Allocate a temporary address for the result
             temp_address = self.virtual_memory.get_temp_address(result_type)
+            # Push the temporary address onto the operand and type stacks
             self.operand_stack.push(temp_address)
             self.type_stack.push(result_type)
+            # Generate the quadruple using addresses
             quadruple = (operator, left_operand, right_operand, temp_address)
             self.quadruple_manager.push(quadruple)
             print(f"Generated temp quadruple: {quadruple}")
+            # Perform the operation and store the result in memory
+            left_value = self.virtual_memory.get_value(left_operand)
+            right_value = self.virtual_memory.get_value(right_operand)
+            if operator == '+':
+                result_value = float(left_value) + float(right_value)
+            elif operator == '-':
+                result_value = float(left_value) - float(right_value)
+            elif operator == '*':
+                result_value = float(left_value) * float(right_value)
+            elif operator == '/':
+                result_value = float(left_value) / float(right_value)
+            else:
+                result_value = None
+            # Store the result in temporary memory
+            self.virtual_memory.set_value(temp_address, result_value)
         except Exception as e:
             print(f"Error creating temporary quadruple: {e}")
 

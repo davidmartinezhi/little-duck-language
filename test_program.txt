@@ -1,11 +1,12 @@
 programa myProgram;
 vars {
-    a, b : entero;
+    a, b, c : entero;
 }
 
 inicio {
     a = 5;
     b = 10;
-    escribe(a + b);
+    c = a * (b+100);
+    escribe(c)
 }
 fin
