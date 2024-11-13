@@ -11,20 +11,27 @@ class VirtualMemory:
         # Starting addresses for each memory segment
         self.global_int = 1000
         self.global_float = 2000
-        self.local_int = 3000
-        self.local_float = 4000
-        self.temp_int = 5000
-        self.temp_float = 6000
-        self.constant_int = 7000
-        self.constant_float = 8000
-        self.constant_string = 9000
-        
+        self.global_bool = 3000
+
+        self.local_int = 4000
+        self.local_float = 5000
+        self.local_bool = 6000
+
+        self.temp_int = 7000
+        self.temp_float = 8000
+        self.temp_bool = 9000
+
+        self.constant_int = 10000
+        self.constant_float = 11000
+        self.constant_string = 12000
+        self.constant_bool = 13000
+
         # Memory segments as dictionaries
         self.global_memory = {}
         self.local_memory = {}
         self.temp_memory = {}
         self.constants_memory = {}
-        
+
         # Constants table to avoid duplicates
         self.constants_table = {}
     
@@ -60,12 +67,15 @@ class VirtualMemory:
     def get_temp_address(self, var_type):
         """
         Allocates a virtual address for a temporary variable based on its type.
-        
+
         Args:
-            var_type (str): The type of the temporary variable ('entero', 'flotante').
-        
+            var_type (str): The type of the temporary variable ('entero', 'flotante', 'bool').
+
         Returns:
             int: The allocated virtual address.
+
+        Raises:
+            Exception: If an unknown type is provided.
         """
         if var_type == "entero":
             address = self.temp_int
@@ -73,6 +83,11 @@ class VirtualMemory:
         elif var_type == "flotante":
             address = self.temp_float
             self.temp_float += 1
+        elif var_type == "bool":
+            address = self.temp_bool
+            self.temp_bool += 1
+        else:
+            raise Exception(f"Unknown type '{var_type}' in get_temp_address")
         self.temp_memory[address] = None
         return address
     

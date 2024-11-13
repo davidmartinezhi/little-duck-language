@@ -1,12 +1,12 @@
-programa myProgram;
+programa test_while_loop;
 vars {
-    a, b, c : entero;
+    i : entero;
 }
-
 inicio {
-    a = 5;
-    b = 10;
-    c = a * (b+100);
-    escribe(c)
+    i = 1;
+    mientras (i < 3) haz {
+        escribe(i);
+        i = i + 1;
+    }
 }
 fin
