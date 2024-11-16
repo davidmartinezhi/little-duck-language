@@ -110,6 +110,7 @@ class LittleDuckCustomListener(little_duckListener):
         """
         Exit a variable declaration.
         Assign types to variables, allocate memory addresses, and add them to the variable table.
+        Also, initialize the variable in virtual memory with default values.
         """
         var_type = ctx.tipo().getText()  # Get the type of the variable
         ids = ctx.id_list().ID()         # Get the list of variable identifiers
@@ -123,6 +124,16 @@ class LittleDuckCustomListener(little_duckListener):
                 # Add the variable to the variable table with its address
                 self.variable_table.add_variable(self.current_scope, var_name, var_type, address)
                 print(f"Variable declaration: {var_name} : {var_type}, Address: {address}")
+
+                # Initialize the variable in virtual memory with default value
+                if var_type == 'entero':
+                    self.virtual_memory.set_value(address, 0)
+                elif var_type == 'flotante':
+                    self.virtual_memory.set_value(address, 0.0)
+                else:
+                    self.virtual_memory.set_value(address, None)
+
+
 
     # ************************************** ASSIGNMENT **************************************#
     # Assignment statement
@@ -393,43 +404,49 @@ class LittleDuckCustomListener(little_duckListener):
             return self.get_factor_type(ctx.factor(0))
 
     def get_factor_type(self, ctx: little_duckParser.FactorContext):
-            """
-            Determine the type of a factor (variable, constant, or expression) and manage operands.
-            """
-            if ctx.ID():
-                var_name = ctx.ID().getText()
-                scope = self.variable_table.find_scope(var_name, self.current_scope)
-                if scope:
-                    var_type = self.variable_table.get_variable_type(scope, var_name)
-                    var_address = self.variable_table.get_variable_address(scope, var_name)
-                    # Push the variable's address onto the operand stack
-                    self.operand_stack.push(var_address)
-                    self.type_stack.push(var_type)
-                    return var_type
-                else:
-                    print(f"Error: Variable '{var_name}' is not declared.")
-                    return "error"
-            elif ctx.cte():
-                if ctx.cte().CTE_ENT():
-                    value = ctx.cte().CTE_ENT().getText()
-                    var_type = "entero"
-                elif ctx.cte().CTE_FLOT():
-                    value = ctx.cte().CTE_FLOT().getText()
-                    var_type = "flotante"
-                else:
-                    print("Error: Invalid constant.")
-                    return "error"
-                # Allocate or get the address of the constant
-                address = self.virtual_memory.get_constant_address(value, var_type)
-                # Push the constant's address onto the operand stack
-                self.operand_stack.push(address)
+        """
+        Determine the type of a factor (variable, constant, or expression) and manage operands.
+        """
+        if ctx.ID():
+            var_name = ctx.ID().getText()
+            scope = self.variable_table.find_scope(var_name, self.current_scope)
+            if scope:
+                var_type = self.variable_table.get_variable_type(scope, var_name)
+                var_address = self.variable_table.get_variable_address(scope, var_name)
+                # Push the variable's address onto the operand stack
+                self.operand_stack.push(var_address)
                 self.type_stack.push(var_type)
                 return var_type
-            elif ctx.expresion():
-                return self.get_expression_type(ctx.expresion())
             else:
-                print("Error: Invalid factor.")
+                print(f"Error: Variable '{var_name}' is not declared.")
                 return "error"
+        elif ctx.cte():
+            if ctx.cte().CTE_ENT():
+                value = ctx.cte().CTE_ENT().getText()
+                var_type = "entero"
+                value = int(value)  # Convert to integer
+            elif ctx.cte().CTE_FLOT():
+                value = ctx.cte().CTE_FLOT().getText()
+                var_type = "flotante"
+                value = float(value)  # Convert to float
+            else:
+                print("Error: Invalid constant.")
+                return "error"
+            # Allocate or get the address of the constant
+            address = self.virtual_memory.get_constant_address(value, var_type)
+            # Ensure the constant is stored with the correct data type
+            if address not in self.virtual_memory.constants_memory:
+                self.virtual_memory.constants_memory[address] = value
+            # Push the constant's address onto the operand stack
+            self.operand_stack.push(address)
+            self.type_stack.push(var_type)
+            return var_type
+        elif ctx.expresion():
+            return self.get_expression_type(ctx.expresion())
+        else:
+            print("Error: Invalid factor.")
+            return "error"
+
 
     def create_temp_quadruple(self, left_type, right_type, operator, result_type):
         """
@@ -440,6 +457,15 @@ class LittleDuckCustomListener(little_duckListener):
             left_operand = self.operand_stack.pop()
             # Allocate a temporary address for the result
             temp_address = self.virtual_memory.get_temp_address(result_type)
+            # Initialize the temporary variable in memory
+            if result_type == 'entero':
+                self.virtual_memory.set_value(temp_address, 0)
+            elif result_type == 'flotante':
+                self.virtual_memory.set_value(temp_address, 0.0)
+            elif result_type == 'bool':
+                self.virtual_memory.set_value(temp_address, False)
+            else:
+                self.virtual_memory.set_value(temp_address, None)
             # Push the temporary address onto the operand and type stacks
             self.operand_stack.push(temp_address)
             self.type_stack.push(result_type)
@@ -447,23 +473,9 @@ class LittleDuckCustomListener(little_duckListener):
             quadruple = (operator, left_operand, right_operand, temp_address)
             self.quadruple_manager.push(quadruple)
             print(f"Generated temp quadruple: {quadruple}")
-            # Perform the operation and store the result in memory
-            left_value = self.virtual_memory.get_value(left_operand)
-            right_value = self.virtual_memory.get_value(right_operand)
-            if operator == '+':
-                result_value = float(left_value) + float(right_value)
-            elif operator == '-':
-                result_value = float(left_value) - float(right_value)
-            elif operator == '*':
-                result_value = float(left_value) * float(right_value)
-            elif operator == '/':
-                result_value = float(left_value) / float(right_value)
-            else:
-                result_value = None
-            # Store the result in temporary memory
-            self.virtual_memory.set_value(temp_address, result_value)
         except Exception as e:
             print(f"Error creating temporary quadruple: {e}")
+
 
     # ************************************** PRINT STATEMENT **************************************#
     # Method for imprime (print) statement

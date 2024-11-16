@@ -67,40 +67,27 @@ class VirtualMemory:
     def get_temp_address(self, var_type):
         """
         Allocates a virtual address for a temporary variable based on its type.
-
-        Args:
-            var_type (str): The type of the temporary variable ('entero', 'flotante', 'bool').
-
-        Returns:
-            int: The allocated virtual address.
-
-        Raises:
-            Exception: If an unknown type is provided.
         """
         if var_type == "entero":
             address = self.temp_int
             self.temp_int += 1
+            self.temp_memory[address] = 0  # Initialize with default integer value
         elif var_type == "flotante":
             address = self.temp_float
             self.temp_float += 1
+            self.temp_memory[address] = 0.0  # Initialize with default float value
         elif var_type == "bool":
             address = self.temp_bool
             self.temp_bool += 1
+            self.temp_memory[address] = False  # Initialize with default boolean value
         else:
             raise Exception(f"Unknown type '{var_type}' in get_temp_address")
-        self.temp_memory[address] = None
         return address
+
     
     def get_constant_address(self, value, var_type):
         """
         Allocates a virtual address for a constant value. If the constant already exists, returns its address.
-        
-        Args:
-            value (str): The constant value.
-            var_type (str): The type of the constant ('entero', 'flotante', 'string').
-        
-        Returns:
-            int: The allocated virtual address.
         """
         if value in self.constants_table:
             return self.constants_table[value]
@@ -114,9 +101,13 @@ class VirtualMemory:
             elif var_type == "string":
                 address = self.constant_string
                 self.constant_string += 1
+            else:
+                raise Exception(f"Unknown constant type '{var_type}'")
+            # Store the value with the correct data type
             self.constants_memory[address] = value
             self.constants_table[value] = address
             return address
+
     
     def set_value(self, address, value):
         """
@@ -132,20 +123,12 @@ class VirtualMemory:
             self.local_memory[address] = value
         elif address in self.temp_memory:
             self.temp_memory[address] = value
-        elif address in self.constants_memory:
-            self.constants_memory[address] = value
         else:
-            print(f"Address {address} not found in any memory segment.")
+            raise Exception(f"Address {address} not found in any memory segment.")
     
     def get_value(self, address):
         """
         Retrieves the value stored at a given virtual address.
-        
-        Args:
-            address (int): The virtual address.
-        
-        Returns:
-            The value stored at the address.
         """
         if address in self.global_memory:
             return self.global_memory[address]
@@ -154,10 +137,20 @@ class VirtualMemory:
         elif address in self.temp_memory:
             return self.temp_memory[address]
         elif address in self.constants_memory:
-            return self.constants_memory[address]
+            value = self.constants_memory[address]
+            # Convert constants to appropriate types
+            if isinstance(value, str):
+                if value.isdigit():
+                    return int(value)
+                try:
+                    return float(value)
+                except ValueError:
+                    return value  # It's a string literal
+            else:
+                return value
         else:
-            print(f"Address {address} not found in any memory segment.")
-            return None
+            raise Exception(f"Address {address} not found in any memory segment.")
+
     
     def print_memory(self):
         """
