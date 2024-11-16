@@ -1,11 +1,12 @@
-programa test_print_statements;
+programa test_while_loop;
 vars {
-    a, b : entero;
+    i : entero;
 }
 inicio {
-    a = 2;
-    b = 3;
-    escribe("Hello, World!");
-    escribe(a + b);
+    i = 1;
+    mientras (i < 3) haz {
+        escribe(i);
+        i = i + 1;
+    }
 }
 fin

@@ -1,5 +1,3 @@
-# test_quadruple_generation.py
-
 from antlr4 import InputStream, CommonTokenStream, ParseTreeWalker
 from generated.little_duckLexer import little_duckLexer
 from generated.little_duckParser import little_duckParser
@@ -12,7 +10,7 @@ from semantics.stack import Stack
 from semantics.quadruple import Quadruple
 
 # Import the custom listener
-from src.custom_listener import LittleDuckCustomListener 
+from src.custom_listener import LittleDuckCustomListener
 
 
 def compile_and_get_quadruples(code):
@@ -66,7 +64,7 @@ def compare_quadruples(generated, expected):
     
     for idx, (gen, exp) in enumerate(zip(generated, expected)):
         if gen != exp:
-            print(f"Mismatch at quadruple {idx}: expected {exp}, got {gen}")
+            print(f"Mismatch at quadruple {idx}:\nExpected: {exp}\nGot:      {gen}")
             return False
     
     return True
@@ -77,7 +75,7 @@ def test_simple_assignment():
     Test simple variable assignments and verify the generated quadruples.
     The program assigns the value 5 to the variable 'a'.
     Expected quadruples:
-    0: ('=', '5', None, 'a')
+    0: ('=', 10000, None, 1000)
     1: ('END', None, None, None)
     """
     code = '''
@@ -91,7 +89,7 @@ def test_simple_assignment():
     fin
     '''
     expected_quadruples = [
-        ('=', '5', None, 'a'),
+        ('=', 10000, None, 1000),  # a = 5
         ('END', None, None, None)
     ]
     
@@ -111,12 +109,12 @@ def test_arithmetic_operations():
     Test arithmetic operations and verify the generated quadruples.
     The program performs 'a = b + c * d'.
     Expected quadruples:
-    0: ('=', '2', None, 'b')
-    1: ('=', '3', None, 'c')
-    2: ('=', '4', None, 'd')
-    3: ('*', 'c', 'd', 't0')
-    4: ('+', 'b', 't0', 't1')
-    5: ('=', 't1', None, 'a')
+    0: ('=', 10000, None, 1001)      # b = 2
+    1: ('=', 10001, None, 1002)      # c = 3
+    2: ('=', 10002, None, 1003)      # d = 4
+    3: ('*', 1002, 1003, 7000)       # t0 = c * d
+    4: ('+', 1001, 7000, 7001)       # t1 = b + t0
+    5: ('=', 7001, None, 1000)       # a = t1
     6: ('END', None, None, None)
     """
     code = '''
@@ -133,12 +131,12 @@ def test_arithmetic_operations():
     fin
     '''
     expected_quadruples = [
-        ('=', '2', None, 'b'),
-        ('=', '3', None, 'c'),
-        ('=', '4', None, 'd'),
-        ('*', 'c', 'd', 't0'),
-        ('+', 'b', 't0', 't1'),
-        ('=', 't1', None, 'a'),
+        ('=', 10000, None, 1001),      # b = 2
+        ('=', 10001, None, 1002),      # c = 3
+        ('=', 10002, None, 1003),      # d = 4
+        ('*', 1002, 1003, 7000),       # t0 = c * d
+        ('+', 1001, 7000, 7001),       # t1 = b + t0
+        ('=', 7001, None, 1000),       # a = t1
         ('END', None, None, None)
     ]
     
@@ -158,11 +156,11 @@ def test_conditional_statement():
     Test 'si' conditional statements without 'sino' and verify the generated quadruples.
     The program checks if 'a > b' and prints 'a is greater'.
     Expected quadruples:
-    0: ('=', '5', None, 'a')
-    1: ('=', '3', None, 'b')
-    2: ('>', 'a', 'b', 't0')
-    3: ('GOTOF', 't0', None, 5)
-    4: ('print_str', 'a is greater', None, None)
+    0: ('=', 10000, None, 1000)          # a = 5
+    1: ('=', 10001, None, 1001)          # b = 3
+    2: ('>', 1000, 1001, 9000)           # t0 = a > b
+    3: ('GOTOF', 9000, None, 5)          # if not t0, jump to quad 5
+    4: ('print_str', 12000, None, None)  # print "a is greater"
     5: ('END', None, None, None)
     """
     code = '''
@@ -180,11 +178,11 @@ def test_conditional_statement():
     fin
     '''
     expected_quadruples = [
-        ('=', '5', None, 'a'),
-        ('=', '3', None, 'b'),
-        ('>', 'a', 'b', 't0'),
-        ('GOTOF', 't0', None, 5),
-        ('print_str', 'a is greater', None, None),
+        ('=', 10000, None, 1000),          # a = 5
+        ('=', 10001, None, 1001),          # b = 3
+        ('>', 1000, 1001, 9000),           # t0 = a > b
+        ('GOTOF', 9000, None, 5),          # if not t0, jump to quad 5
+        ('print_str', 12000, None, None),  # print "a is greater"
         ('END', None, None, None)
     ]
     
@@ -202,15 +200,15 @@ def test_conditional_statement():
 def test_conditional_with_else():
     """
     Test 'si' conditional statements with 'sino' and verify the generated quadruples.
-    The program checks if 'a == b' and prints messages accordingly.
+    The program checks if 'a > b' and prints messages accordingly.
     Expected quadruples:
-    0: ('=', '5', None, 'a')
-    1: ('=', '5', None, 'b')
-    2: ('>', 'a', 'b', 't0')
-    3: ('GOTOF', 't0', None, 6)
-    4: ('print_str', 'a is greater to b', None, None)
-    5: ('GOTO', None, None, 7)
-    6: ('print_str', 'a is not greater to b', None, None)
+    0: ('=', 10000, None, 1000)          # a = 5
+    1: ('=', 10000, None, 1001)          # b = 5
+    2: ('>', 1000, 1001, 9000)           # t0 = a > b
+    3: ('GOTOF', 9000, None, 6)          # if not t0, jump to quad 6
+    4: ('print_str', 12000, None, None)  # print "a is greater to b"
+    5: ('GOTO', None, None, 7)           # jump to quad 7
+    6: ('print_str', 12001, None, None)  # print "a is not greater to b"
     7: ('END', None, None, None)
     """
     code = '''
@@ -230,13 +228,13 @@ def test_conditional_with_else():
     fin
     '''
     expected_quadruples = [
-        ('=', '5', None, 'a'),
-        ('=', '5', None, 'b'),
-        ('>', 'a', 'b', 't0'),
-        ('GOTOF', 't0', None, 6),
-        ('print_str', 'a is greater to b', None, None),
-        ('GOTO', None, None, 7),
-        ('print_str', 'a is not greater to b', None, None),
+        ('=', 10000, None, 1000),          # a = 5
+        ('=', 10000, None, 1001),          # b = 5
+        ('>', 1000, 1001, 9000),           # t0 = a > b
+        ('GOTOF', 9000, None, 6),          # if not t0, jump to quad 6
+        ('print_str', 12000, None, None),  # print "a is greater to b"
+        ('GOTO', None, None, 7),           # jump to quad 7
+        ('print_str', 12001, None, None),  # print "a is not greater to b"
         ('END', None, None, None)
     ]
     
@@ -254,15 +252,15 @@ def test_conditional_with_else():
 def test_while_loop():
     """
     Test 'mientras' loop and verify the generated quadruples.
-    The program prints numbers from 1 to 3 using a loop.
+    The program prints numbers from 1 to 2 using a loop.
     Expected quadruples:
-    0: ('=', '1', None, 'i')
-    1: ('<', 'i', '3', 't0')
-    2: ('GOTOF', 't0', None, 6)
-    3: ('print', 'i', None, None)
-    4: ('+', 'i', '1', 't1')
-    5: ('=', 't1', None, 'i')
-    6: ('GOTO', None, None, 1)
+    0: ('=', 10000, None, 1000)         # i = 1
+    1: ('<', 1000, 10001, 9000)         # t0 = i < 3
+    2: ('GOTOF', 9000, None, 7)         # if not t0, jump to quad 7
+    3: ('print', 1000, None, None)      # print i
+    4: ('+', 1000, 10000, 7000)         # t1 = i + 1
+    5: ('=', 7000, None, 1000)          # i = t1
+    6: ('GOTO', None, None, 1)          # jump back to quad 1
     7: ('END', None, None, None)
     """
     code = '''
@@ -280,13 +278,13 @@ def test_while_loop():
     fin
     '''
     expected_quadruples = [
-        ('=', '1', None, 'i'),
-        ('<', 'i', '3', 't0'),
-        ('GOTOF', 't0', None, 7),
-        ('print', 'i', None, None),
-        ('+', 'i', '1', 't1'),
-        ('=', 't1', None, 'i'),
-        ('GOTO', None, None, 1),
+        ('=', 10000, None, 1000),       # i = 1
+        ('<', 1000, 10001, 9000),       # t0 = i < 3
+        ('GOTOF', 9000, None, 7),       # if not t0, jump to quad 7
+        ('print', 1000, None, None),    # print i
+        ('+', 1000, 10000, 7000),       # t1 = i + 1
+        ('=', 7000, None, 1000),        # i = t1
+        ('GOTO', None, None, 1),        # jump back to quad 1
         ('END', None, None, None)
     ]
     
@@ -305,7 +303,19 @@ def test_combined_operations():
     """
     Test a combination of arithmetic operations, conditionals, and loops.
     The program calculates the factorial of a number.
-    Expected quadruples: (The quadruples will represent the factorial calculation logic)
+    Expected quadruples:
+    0: ('=', 10000, None, 1000)          # n = 5
+    1: ('=', 10001, None, 1001)          # result = 1
+    2: ('>', 1000, 10001, 9000)          # t0 = n > 1
+    3: ('GOTOF', 9000, None, 9)          # if not t0, jump to quad 9
+    4: ('*', 1001, 1000, 7000)           # t1 = result * n
+    5: ('=', 7000, None, 1001)           # result = t1
+    6: ('-', 1000, 10001, 7001)          # t2 = n - 1
+    7: ('=', 7001, None, 1000)           # n = t2
+    8: ('GOTO', None, None, 2)           # jump back to quad 2
+    9: ('print_str', 12000, None, None)  # print "Factorial is:"
+    10: ('print', 1001, None, None)      # print result
+    11: ('END', None, None, None)
     """
     code = '''
     programa test_combined_operations;
@@ -324,17 +334,17 @@ def test_combined_operations():
     fin
     '''
     expected_quadruples = [
-        ('=', '5', None, 'n'),
-        ('=', '1', None, 'result'),
-        ('>', 'n', '1', 't0'),
-        ('GOTOF', 't0', None, 6),
-        ('*', 'result', 'n', 't1'),
-        ('=', 't1', None, 'result'),
-        ('-', 'n', '1', 't2'),
-        ('=', 't2', None, 'n'),
-        ('GOTO', None, None, 2),
-        ('print_str', 'Factorial is:', None, None),
-        ('print', 'result', None, None),
+        ('=', 10000, None, 1000),          # n = 5
+        ('=', 10001, None, 1001),          # result = 1
+        ('>', 1000, 10001, 9000),          # t0 = n > 1
+        ('GOTOF', 9000, None, 9),          # if not t0, jump to quad 9
+        ('*', 1001, 1000, 7000),           # t1 = result * n
+        ('=', 7000, None, 1001),           # result = t1
+        ('-', 1000, 10001, 7001),          # t2 = n - 1
+        ('=', 7001, None, 1000),           # n = t2
+        ('GOTO', None, None, 2),           # jump back to quad 2
+        ('print_str', 12000, None, None),  # print "Factorial is:"
+        ('print', 1001, None, None),       # print result
         ('END', None, None, None)
     ]
     
@@ -345,10 +355,7 @@ def test_combined_operations():
     for idx, quad in enumerate(generated_quadruples):
         print(f"{idx}: {quad}")
     
-    # Note: The exact quadruples may vary based on implementation details.
-    # This expected list is an example and may need adjustments.
-    assert generated_quadruples[-2] == ('print', 'result', None, None), "Combined Operations Test Failed at printing 'result'"
-    assert generated_quadruples[-1] == ('END', None, None, None), "Combined Operations Test Failed at 'END'"
+    assert compare_quadruples(generated_quadruples, expected_quadruples), "Combined Operations Test Failed"
     print("Combined Operations Test Passed!\n" + "-"*50 + "\n")
 
 
@@ -357,11 +364,11 @@ def test_print_statements():
     Test 'escribe' statements with both strings and expressions.
     The program prints a greeting and the sum of two numbers.
     Expected quadruples:
-    0: ('=', '2', None, 'a')
-    1: ('=', '3', None, 'b')
-    2: ('+', 'a', 'b', 't0')
-    3: ('print_str', 'Hello, World!', None, None)
-    4: ('print', 't0', None, None)
+    0: ('=', 10000, None, 1000)          # a = 2
+    1: ('=', 10001, None, 1001)          # b = 3
+    2: ('print_str', 12000, None, None)  # print "Hello, World!"
+    3: ('+', 1000, 1001, 7000)           # t0 = a + b
+    4: ('print', 7000, None, None)       # print t0
     5: ('END', None, None, None)
     """
     code = '''
@@ -378,11 +385,11 @@ def test_print_statements():
     fin
     '''
     expected_quadruples = [
-        ('=', '2', None, 'a'),
-        ('=', '3', None, 'b'),
-        ('print_str', 'Hello, World!', None, None),
-        ('+', 'a', 'b', 't0'),
-        ('print', 't0', None, None),
+        ('=', 10000, None, 1000),          # a = 2
+        ('=', 10001, None, 1001),          # b = 3
+        ('print_str', 12000, None, None),  # print "Hello, World!"
+        ('+', 1000, 1001, 7000),           # t0 = a + b
+        ('print', 7000, None, None),       # print t0
         ('END', None, None, None)
     ]
     
