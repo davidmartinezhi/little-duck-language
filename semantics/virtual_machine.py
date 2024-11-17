@@ -8,7 +8,7 @@ class VirtualMachine:
         IP (int): Instruction Pointer, the index of the current quadruple.
     """
 
-    def __init__(self, quadruples, virtual_memory):
+    def __init__(self, quadruples, virtual_memory, print_traversal=False):
         """
         Initializes the virtual machine with quadruples and virtual memory.
 
@@ -16,6 +16,7 @@ class VirtualMachine:
             quadruples (list): The list of quadruples to execute.
             virtual_memory (VirtualMemory): The virtual memory manager instance.
         """
+        self.print_traversal = print_traversal
         self.quadruples = quadruples
         self.virtual_memory = virtual_memory
         self.IP = 0  # Instruction Pointer
@@ -60,7 +61,8 @@ class VirtualMachine:
         target = quad[3]
         value = self.virtual_memory.get_value(source)
         self.virtual_memory.set_value(target, value)
-        print(f"Assigned value {value} to address {target}")
+        if self.print_traversal:
+            print(f"Assigned value {value} to address {target}")
         self.IP += 1
 
     def handle_arithmetic(self, quad):
@@ -80,8 +82,8 @@ class VirtualMachine:
             left_value = int(left_value) if left_value.isdigit() else float(left_value)
         if isinstance(right_value, str):
             right_value = int(right_value) if right_value.isdigit() else float(right_value)
-
-        print(f"Performing {left_value} {op} {right_value}")
+        if self.print_traversal:
+            print(f"Performing {left_value} {op} {right_value}")
         # Perform the arithmetic operation
         if op == '+':
             result = left_value + right_value
@@ -96,7 +98,8 @@ class VirtualMachine:
 
         # Store the result in the virtual memory
         self.virtual_memory.set_value(result_address, result)
-        print(f"Assigned value {result} to address {result_address}")
+        if self.print_traversal:
+            print(f"Assigned value {result} to address {result_address}")
         self.IP += 1
 
 
@@ -118,8 +121,8 @@ class VirtualMachine:
             left_value = int(left_value) if left_value.isdigit() else float(left_value)
         if isinstance(right_value, str):
             right_value = int(right_value) if right_value.isdigit() else float(right_value)
-
-        print(f"Evaluating {left_value} {op} {right_value}")
+        if self.print_traversal:
+            print(f"Evaluating {left_value} {op} {right_value}")
         # Perform the relational operation
         if op == '<':
             result = left_value < right_value
@@ -132,7 +135,8 @@ class VirtualMachine:
 
         # Store the boolean result in the virtual memory
         self.virtual_memory.set_value(result_address, result)
-        print(f"Storing boolean result {result} at address {result_address}")
+        if self.print_traversal:
+            print(f"Storing boolean result {result} at address {result_address}")
         self.IP += 1
 
 

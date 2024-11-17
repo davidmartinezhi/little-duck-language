@@ -48,7 +48,7 @@ def main(argv):
     tree = parser.programa()  # 'programa' is the initial symbol of the grammar
 
     # Initialize the custom listener for semantic analysis
-    listener = LittleDuckCustomListener()
+    listener = LittleDuckCustomListener(print_traversal=True)  # Set print_traversal to True to print the traversal
 
     # Walk the parse tree with the custom listener to perform semantic actions
     walker = ParseTreeWalker()
@@ -58,14 +58,14 @@ def main(argv):
     quadruples = listener.quadruple_manager.quadruples
     virtual_memory = listener.virtual_memory
 
-    # Optionally, print the generated quadruples
-    print("\nGenerated Quadruples:")
-    for idx, quad in enumerate(quadruples):
-        print(f"{idx}: {quad}")
+    # Print the generated quadruples
+    # print("\nGenerated Quadruples:")
+    # for idx, quad in enumerate(quadruples):
+    #     print(f"{idx}: {quad}")
 
-    # Optionally, print the memory state before execution
-    print("\nMemory State Before Execution:")
-    virtual_memory.print_memory()
+    # # Print the memory state before execution
+    # print("\nMemory State Before Execution:")
+    # virtual_memory.print_memory()
     print("\nRunning program:")
     # Initialize and run the virtual machine
     vm = VirtualMachine(quadruples, virtual_memory)
