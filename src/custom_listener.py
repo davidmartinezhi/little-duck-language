@@ -9,6 +9,7 @@ from semantics.stack import Stack
 from semantics.quadruple import Quadruple
 from semantics.virtual_memory import VirtualMemory
 
+
 class LittleDuckCustomListener(little_duckListener):
     """
     Custom listener for the Little Duck language parser to perform semantic analysis.
@@ -21,7 +22,7 @@ class LittleDuckCustomListener(little_duckListener):
         Initialize semantic structures and variables needed for semantic analysis.
         """
         self.print_traversal = print_traversal
-        
+
         # Initialize semantic structures
         self.variable_table = (
             VariableTable()
@@ -34,24 +35,20 @@ class LittleDuckCustomListener(little_duckListener):
         )  # Manages quadruples (intermediate code representation)
         self.virtual_memory = VirtualMemory()  # Add this line
 
-
         self.current_scope = "global"  # Tracks the current scope (e.g., global)
 
-        self.var_stack = (
+        self.var_stack = (  # Stack to temporarily store variable identifiers during parsing
             []
-        )  # Stack to temporarily store variable identifiers during parsing
-        self.operand_stack = (
+        )
+        self.operand_stack = (  # Stack to manage operands in expression evaluation
             Stack()
-        )  # Stack to manage operands in expression evaluation
-        self.operator_stack = (
+        )
+        self.type_stack = (  # Stack to manage operand types in expression evaluation
             Stack()
-        )  # Stack to manage operators in expression evaluation
-        self.type_stack = (
-            Stack()
-        )  # Stack to manage operand types in expression evaluation
+        )
 
-        self.temp_var_counter = (
-            0  # Counter for generating unique temporary variable names
+        self.temp_var_counter = (  # Counter for generating unique temporary variable names
+            0
         )
         self.label_counter = 0  # Counter for generating unique labels
         self.jump_stack = Stack()  # Stack to manage jumps for conditional statements
@@ -63,11 +60,12 @@ class LittleDuckCustomListener(little_duckListener):
         Enter the root of the parse tree (program).
         Initialize the program and set the global scope.
         """
+
         self.variable_table.set_scope(
             self.current_scope
         )  # Set current scope to global scope
         program_name = ctx.ID().getText()  # Get program name from the text of the ID
-        
+
         if self.print_traversal:
             print("\n=============")
             print(f"Entering program: {program_name}")  # Print program name
@@ -78,22 +76,27 @@ class LittleDuckCustomListener(little_duckListener):
         Exit the root of the parse tree (program).
         Perform cleanup, output the generated quadruples, and print memory contents.
         """
-        self.variable_table.clean_variables(self.current_scope)
-
         if self.print_traversal:
             print("\n=============")
             print("Exiting program")
             print("=============\n")
 
+        self.variable_table.clean_variables(self.current_scope)  # Clean up variables
+
         # Add END quadruple to signify the end of the program
-        end_quadruple = ("END", None, None, None)
-        self.quadruple_manager.push(end_quadruple)
-        
+        end_quadruple = ("END", None, None, None)  # Quadruple for program end
+        self.quadruple_manager.push(
+            end_quadruple
+        )  # Push the END quadruple to the quadruple manager
+
+        # Print the generated quadruples and memory contents
         if self.print_traversal:
-            print(f"Generated END quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {end_quadruple}")
-            
+            print(
+                f"Generated END quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {end_quadruple}"
+            )
+
             # Print the generated quadruples
-            print("\nGenerated Quadruples:")       
+            print("\nGenerated Quadruples:")
             for idx, quad in enumerate(self.quadruple_manager.quadruples):
                 print(f"{idx}: {quad}")
 
@@ -123,29 +126,39 @@ class LittleDuckCustomListener(little_duckListener):
         Also, initialize the variable in virtual memory with default values.
         """
         var_type = ctx.tipo().getText()  # Get the type of the variable
-        ids = ctx.id_list().ID()         # Get the list of variable identifiers
-        for id_token in ids:             # Iterate over each variable identifier
+        ids = ctx.id_list().ID()  # Get the list of variable identifiers
+
+        for id_token in ids:  # Iterate over each variable identifier
             var_name = id_token.getText()  # Get the text of the ID token
+
+            # Check if the variable is already declared in the current scope
             if var_name in self.variable_table.variables[self.current_scope]:
-                print(f"Error: Variable '{var_name}' is already declared in scope '{self.current_scope}'.")
+                print(
+                    f"Error: Variable '{var_name}' is already declared in scope '{self.current_scope}'."
+                )
+
+            # If the variable is not declared in the current scope
             else:
                 # Allocate memory address for the variable
                 address = self.virtual_memory.get_address(var_type, self.current_scope)
                 # Add the variable to the variable table with its address
-                self.variable_table.add_variable(self.current_scope, var_name, var_type, address)
-                
+                self.variable_table.add_variable(
+                    self.current_scope, var_name, var_type, address
+                )
+
+                # Print the variable declaration information
                 if self.print_traversal:
-                    print(f"Variable declaration: {var_name} : {var_type}, Address: {address}")
+                    print(
+                        f"Variable declaration: {var_name} : {var_type}, Address: {address}"
+                    )
 
                 # Initialize the variable in virtual memory with default value
-                if var_type == 'entero':
+                if var_type == "entero":
                     self.virtual_memory.set_value(address, 0)
-                elif var_type == 'flotante':
+                elif var_type == "flotante":
                     self.virtual_memory.set_value(address, 0.0)
                 else:
                     self.virtual_memory.set_value(address, None)
-
-
 
     # ************************************** ASSIGNMENT **************************************#
     # Assignment statement
@@ -154,104 +167,159 @@ class LittleDuckCustomListener(little_duckListener):
         Exit an assignment statement.
         Perform type checking, generate assignment quadruples, and update memory.
         """
-        var_name = ctx.ID().getText()
-        scope = self.variable_table.find_scope(var_name, self.current_scope)
+        var_name = ctx.ID().getText()  # Get the variable name from the ID token
+        scope = self.variable_table.find_scope(
+            var_name, self.current_scope
+        )  # Find the scope of the variable
+
+        # Check if the variable is declared
         if not scope:
             print(f"Error: Variable '{var_name}' is not declared.")
+
+        # If the variable is declared
         else:
-            expr_type = self.get_expression_type(ctx.expresion())
-            var_type = self.variable_table.get_variable_type(scope, var_name)
+            # Get the type of the expression on the right-hand side and the variable's type
+            expr_type = self.get_expression_type(
+                ctx.expresion()
+            )  # Get the type of the expression
+            var_type = self.variable_table.get_variable_type(
+                scope, var_name
+            )  # Get the type of the variable
+
             try:
-                result_type = self.semantic_cube.get_type(var_type, expr_type, "=")
-                # Retrieve the operand's address from the operand stack
-                operand_address = self.operand_stack.pop()
-                # Get the variable's address
-                var_address = self.variable_table.get_variable_address(scope, var_name)
+                result_type = self.semantic_cube.get_type(
+                    var_type, expr_type, "="
+                )  # Get the result type of the assignment
+                operand_address = (
+                    self.operand_stack.pop()
+                )  # Retrieve the operand's address from the operand stack
+                var_address = self.variable_table.get_variable_address(
+                    scope, var_name
+                )  # Get the variable's address
+
                 # Generate the assignment quadruple using addresses
                 quadruple = ("=", operand_address, None, var_address)
                 self.quadruple_manager.push(quadruple)
-                if self.print_traversal:
-                    print(f"Generated quadruple: {quadruple}")
+
                 # Update memory with the new value
                 value = self.virtual_memory.get_value(operand_address)
                 self.virtual_memory.set_value(var_address, value)
+
+                # Print the generated quadruple
+                if self.print_traversal:
+                    print(f"Generated quadruple: {quadruple}")
+
             except TypeError as e:
                 print(f"Type mismatch in assignment to variable '{var_name}'. {str(e)}")
 
     # ************************************** CONDITIONAL STATEMENTS **************************************#
     # Conditional statement - si (if)
     def enterCondicion(self, ctx: little_duckParser.CondicionContext):
+        """
+        Enter condition statement.
+        Perform type checking, generate condicion quadruples, and update jump stack.
+        """
         if self.print_traversal:
             print("\n============= Entering 'si' condition =============")
-        expr_type = self.get_expression_type(
-            ctx.expresion()
-        )  # Get the type of the condition expression
+
+        # Get the type of the condition expression
+        expr_type = self.get_expression_type(ctx.expresion())
+
+        # Print the condition expression
         if self.print_traversal:
             print(
                 f"Expresion: {ctx.expresion().getText()}, type: {expr_type}"
             )  # Print the condition expression
-        if expr_type != "bool":  # Check if the type of the expression is not boolean
+
+        # Check if the type of the expression is not boolean
+        if expr_type != "bool":
             print("Error: Condition expression must be of type 'bool'.")
-        else:  # If the type of the expression is boolean
-            condition_result = (
+
+        # If the type of the expression is boolean
+        else:
+            condition_result = (  # Pop the condition result from the operand stack
                 self.operand_stack.pop()
-            )  # Pop the condition result from the operand stack
+            )
+
+            # Generate the GOTOF quadruple and push it to the quadruple manager
             quadruple = (
                 "GOTOF",
                 condition_result,
                 None,
                 None,
-            )  # Create the GOTOF quadruple
-            self.quadruple_manager.push(
-                quadruple
-            )  # Push the quadruple to the quadruple manager
+            )
+            self.quadruple_manager.push(quadruple)
+
+            # Push the GOTOF quadruple's index onto the jump stack for future patching
             self.jump_stack.push(
                 len(self.quadruple_manager.quadruples) - 1
             )  # Push the index of the quadruple to the jump stack
+
+            # Print the generated quadruple
             if self.print_traversal:
                 print(
                     f"Generated GOTOF quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}"
                 )
 
     def exitCondicion(self, ctx: little_duckParser.CondicionContext):
+        """
+        Exit condition statement.
+        Patch GOTOF quadruples if 'sino' clause is not present.
+        """
         if self.print_traversal:
             print("============= Exiting 'si' condition =============\n")
 
-        if not ctx.condicion_else().SINO():  # Check if there is no 'sino' clause
+        # Check if there is no 'sino' clause
+        if not ctx.condicion_else().SINO():
             # No else clause; patch the GOTOF here
-            false_jump_index = (
+            false_jump_index = (  # Pop the index of the quadruple from the jump stack
                 self.jump_stack.pop()
-            )  # Pop the index of the quadruple from the jump stack
+            )
+
+            # Patch the GOTOF quadruple
             self.quadruple_manager.quadruples[false_jump_index] = (
                 "GOTOF",
                 self.quadruple_manager.quadruples[false_jump_index][1],
                 None,
-                len(self.quadruple_manager.quadruples),
-            )  # Patch the GOTOF quadruple
+                len(self.quadruple_manager.quadruples),  # Point to the next quadruple
+            )
+
+            # Print the patched quadruple
             if self.print_traversal:
                 print(
                     f"Patched GOTOF at index {false_jump_index} to point to {len(self.quadruple_manager.quadruples)}"
                 )
 
     def enterCondicion_else(self, ctx: little_duckParser.Condicion_elseContext):
+        """
+        Enter condition_else statement.
+        Generate GOTO quadruples to skip the else block after the if block executes.
+        """
+
+        # Check if there is an 'sino' clause
         if ctx.SINO():
+
+            # Print that we are entering the 'sino' clause
             if self.print_traversal:
                 print("\n============= Entering 'sino' clause =============")
+
             # Pop the false jump index from the jump stack
-            false_jump_index = (
-                self.jump_stack.pop()
-            )  # Pop the index of the quadruple from the jump stack
+            false_jump_index = self.jump_stack.pop()
+
             # Generate a GOTO to skip the else block after the if block executes
             quadruple = ("GOTO", None, None, None)
             self.quadruple_manager.push(quadruple)
-            # Push the GOTO's index onto the jump_stack for later patching
-            self.jump_stack.push(
+
+            self.jump_stack.push(  # Push the GOTO's index onto the jump_stack for later patching
                 len(self.quadruple_manager.quadruples) - 1
-            )  # Push the index of the quadruple to the jump stack
+            )
+
+            # Print the generated GOTO quadruple
             if self.print_traversal:
                 print(
                     f"Generated GOTO quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}"
                 )
+
             # Now patch the GOTOF to point to the instruction after the GOTO (start of else block)
             self.quadruple_manager.quadruples[false_jump_index] = (
                 "GOTOF",
@@ -259,18 +327,29 @@ class LittleDuckCustomListener(little_duckListener):
                 None,
                 len(self.quadruple_manager.quadruples),
             )
+
+            # Print the patched GOTOF quadruple
             if self.print_traversal:
                 print(
                     f"Patched GOTOF at index {false_jump_index} to point to else block at {len(self.quadruple_manager.quadruples)}"
                 )
 
     def exitCondicion_else(self, ctx: little_duckParser.Condicion_elseContext):
+        """
+        Exit condition_else statement.
+        Patch GOTO quadruples to skip the else block after the if block executes.
+        """
+
+        # Check if there is an 'sino' clause
         if ctx.SINO():
+
+            # Print that we are exiting the 'sino' clause
             if self.print_traversal:
                 print("============= Exiting 'sino' clause =============\n")
 
             # Pop the GOTO index from the jump stack
             end_jump_index = self.jump_stack.pop()
+
             # Update the GOTO to point to the instruction after the else block (or to END)
             self.quadruple_manager.quadruples[end_jump_index] = (
                 "GOTO",
@@ -278,11 +357,12 @@ class LittleDuckCustomListener(little_duckListener):
                 None,
                 len(self.quadruple_manager.quadruples),
             )
+
+            # Print the patched GOTO quadruple
             if self.print_traversal:
                 print(
                     f"Patched GOTO at index {end_jump_index} to point to {len(self.quadruple_manager.quadruples)}"
                 )
-        # No else clause handling here, as it's already managed in exitCondicion
 
     # ************************************** LOOP STATEMENTS **************************************#
     # While loop - ciclo
@@ -295,29 +375,45 @@ class LittleDuckCustomListener(little_duckListener):
             print("\n============= Entering 'mientras' (while loop) =============")
 
         # Save the current position (start of the loop condition) to the jump stack
-        loop_start = len(self.quadruple_manager.quadruples)
-        self.jump_stack.push(loop_start)
+        loop_start = len(
+            self.quadruple_manager.quadruples
+        )  # Get the current quadruple index
+        self.jump_stack.push(
+            loop_start
+        )  # Push the loop start position onto the jump stack
+
+        # Print the loop start position
         if self.print_traversal:
             print(f"Pushed loop start position {loop_start} onto the jump stack")
 
         # Evaluate the loop condition expression
         expr_type = self.get_expression_type(ctx.expresion())
+
+        # Check if the expression is not boolean
         if expr_type != "bool":
             print("Error: Loop condition expression must be of type 'bool'.")
+
+        # If the expression is boolean
         else:
             # Pop the condition result from the operand stack
             condition_result = self.operand_stack.pop()
+
+            # Print the condition result
             if self.print_traversal:
                 print(f"Operand in operand stack: {condition_result}")
-            # Generate the GOTOF quadruple
+
+            # Generate the GOTOF quadruple and push it to the quadruple manager
             self.quadruple_manager.push(("GOTOF", condition_result, None, None))
-            false_jump_quad_index = (
-                len(self.quadruple_manager.quadruples) - 1
-            )  # Get the index of the GOTOF quadruple
+
+            # Get the index of the GOTOF quadruple
+            false_jump_quad_index = len(self.quadruple_manager.quadruples) - 1
+
+            # Print the generated GOTOF quadruple
             if self.print_traversal:
                 print(
                     f"Generated GOTOF quadruple at index {false_jump_quad_index}: ('GOTOF', {condition_result}, None, None)"
                 )
+
             # Push the GOTOF quadruple's index onto the jump stack for future patching
             self.jump_stack.push(false_jump_quad_index)
 
@@ -326,18 +422,26 @@ class LittleDuckCustomListener(little_duckListener):
         Exit a 'ciclo' (while loop).
         Generate the appropriate quadruples to handle looping.
         """
+
+        # Print that we are exiting the while loop
         if self.print_traversal:
             print("============= Exiting 'ciclo' (while loop) =============\n")
+
         # Pop the false jump index and the loop start position from the jump stack
-        false_jump_quad_index = self.jump_stack.pop()
-        loop_start = self.jump_stack.pop()
+        false_jump_quad_index = (
+            self.jump_stack.pop()
+        )  # Get the false jump index, after the loop start
+        loop_start = self.jump_stack.pop()  # Get the loop start position
+
         # Generate a GOTO quadruple to return to the loop start
         self.quadruple_manager.push(("GOTO", None, None, loop_start))
         goto_quad_index = len(self.quadruple_manager.quadruples) - 1
+
         if self.print_traversal:
             print(
                 f"Generated GOTO quadruple at index {goto_quad_index}: ('GOTO', None, None, {loop_start})"
             )
+
         # Patch the GOTOF quadruple to point to the instruction after the loop
         self.quadruple_manager.quadruples[false_jump_quad_index] = (
             "GOTOF",
@@ -345,6 +449,8 @@ class LittleDuckCustomListener(little_duckListener):
             None,
             len(self.quadruple_manager.quadruples),
         )
+
+        # Print the patched GOTOF quadruple
         if self.print_traversal:
             print(
                 f"Patched GOTOF at index {false_jump_quad_index} to point to {len(self.quadruple_manager.quadruples)}"
@@ -356,20 +462,32 @@ class LittleDuckCustomListener(little_duckListener):
         """
         Determine the type of an expression by recursively analyzing its components.
         """
+        # Check if the expression contains a comparison operator, the lowest in hierarchy
         if ctx.op_comparacion():
             # Comparison expression
-            left_type = self.get_exp_type(ctx.exp(0))
-            right_type = self.get_exp_type(ctx.exp(1))
-            operator = ctx.op_comparacion().getText()
+            left_type = self.get_exp_type(
+                ctx.exp(0)
+            )  # Get the type of the left expression
+            right_type = self.get_exp_type(
+                ctx.exp(1)
+            )  # Get the type of the right expression
+            operator = ctx.op_comparacion().getText()  # Get the comparison operator
+
+            # Print the comparison operation
             if self.print_traversal:
                 print(f"Comparing {left_type} {operator} {right_type}")
+
             try:
+                # Get the result type of the comparison operation
                 result_type = self.semantic_cube.get_type(
                     left_type, right_type, operator
                 )
+
                 # Push the result onto the stacks
                 self.create_temp_quadruple(left_type, right_type, operator, result_type)
+
                 return result_type
+
             except TypeError as e:
                 print(
                     f"Error: Incompatible types in expression: {left_type} {operator} {right_type}. {str(e)}"
@@ -377,58 +495,83 @@ class LittleDuckCustomListener(little_duckListener):
                 return "error"
         else:
             # Single expression
-            return self.get_exp_type(ctx.exp(0))
+            return self.get_exp_type(
+                ctx.exp(0)
+            )  # No comparison operator joining expressions, Check next in hierarchy
 
     def get_exp_type(self, ctx: little_duckParser.ExpContext):
         """
         Determine the type of an arithmetic expression (addition/subtraction).
         """
+        # Check if the expression contains an arithmetic operator add or substraction
         if len(ctx.termino()) > 1:
+            # Check if left or right expression is a term
             left_type = self.get_termino_type(ctx.termino(0))
             right_type = self.get_termino_type(ctx.termino(1))
-            operator = ctx.getChild(1).getText()
+            operator = ctx.getChild(1).getText()  # Get the arithmetic operator
+
+            # Print the arithmetic operation
             if self.print_traversal:
                 print(f"Exp Type {left_type} {operator} {right_type}")
+
             try:
+                # Get the result type of the arithmetic operation
                 result_type = self.semantic_cube.get_type(
                     left_type, right_type, operator
                 )
+
                 # Push the result onto the stacks
                 if self.print_traversal:
                     print(
                         f"Generated quadruple: {left_type} {operator} {right_type} -> {result_type}"
                     )
+
+                # Push the result onto the stacks
                 self.create_temp_quadruple(left_type, right_type, operator, result_type)
+
                 return result_type
+
             except TypeError as e:
                 print(
                     f"Error: Incompatible types in expression: {left_type} {operator} {right_type}. {str(e)}"
                 )
                 return "error"
         else:
-            return self.get_termino_type(ctx.termino(0))
+            return self.get_termino_type(
+                ctx.termino(0)
+            )  # No exp operator joining terms, Check next in hierarchy
 
     def get_termino_type(self, ctx: little_duckParser.TerminoContext):
         """
         Determine the type of a term (multiplication/division).
         """
+        # Check if the term contains an arithmetic operator multiplication or division
         if len(ctx.factor()) > 1:
+            # Check if left or right term is a factor
             left_type = self.get_factor_type(ctx.factor(0))
             right_type = self.get_factor_type(ctx.factor(1))
-            operator = ctx.getChild(1).getText()
+            operator = ctx.getChild(1).getText()  # Get the arithmetic operator
+
+            # Print the term operation
             if self.print_traversal:
                 print(f"Termino type {left_type} {operator} {right_type}")
+
             try:
+                # Get the result type of the term operation
                 result_type = self.semantic_cube.get_type(
                     left_type, right_type, operator
                 )
-                # Push the result onto the stacks
+
+                # Print the generated quadruple
                 if self.print_traversal:
                     print(
                         f"Generated quadruple: {left_type} {operator} {right_type} -> {result_type}"
                     )
+
+                # Push the result onto the stacks
                 self.create_temp_quadruple(left_type, right_type, operator, result_type)
                 return result_type
+
             except TypeError as e:
                 print(
                     f"Error: Incompatible types in term: {left_type} {operator} {right_type}. {str(e)}"
@@ -441,100 +584,164 @@ class LittleDuckCustomListener(little_duckListener):
         """
         Determine the type of a factor (variable, constant, or expression) and manage operands.
         """
-        if ctx.ID():
+        # Check if the factor is a variable, constant, or expression
+        if ctx.ID():  # Variable
             var_name = ctx.ID().getText()
             scope = self.variable_table.find_scope(var_name, self.current_scope)
+
+            # Check if the variable is declared
             if scope:
+                # Get the variable's type and address
                 var_type = self.variable_table.get_variable_type(scope, var_name)
                 var_address = self.variable_table.get_variable_address(scope, var_name)
-                # Push the variable's address onto the operand stack
+
+                # Push the variable's address and type to their respective stacks
                 self.operand_stack.push(var_address)
                 self.type_stack.push(var_type)
+
                 return var_type
+
             else:
                 print(f"Error: Variable '{var_name}' is not declared.")
                 return "error"
-        elif ctx.cte():
-            if ctx.cte().CTE_ENT():
-                value = ctx.cte().CTE_ENT().getText()
-                var_type = "entero"
+
+        elif ctx.cte():  # Constant
+            if ctx.cte().CTE_ENT():  # Integer
+                value = ctx.cte().CTE_ENT().getText()  # Get the integer value
+                var_type = "entero"  # Set the type to integer
                 value = int(value)  # Convert to integer
-            elif ctx.cte().CTE_FLOT():
-                value = ctx.cte().CTE_FLOT().getText()
-                var_type = "flotante"
+
+            elif ctx.cte().CTE_FLOT():  # Float
+                value = ctx.cte().CTE_FLOT().getText()  # Get the float value
+                var_type = "flotante"  # Set the type to float
                 value = float(value)  # Convert to float
+
             else:
                 print("Error: Invalid constant.")
                 return "error"
+
             # Allocate or get the address of the constant
             address = self.virtual_memory.get_constant_address(value, var_type)
+
             # Ensure the constant is stored with the correct data type
             if address not in self.virtual_memory.constants_memory:
                 self.virtual_memory.constants_memory[address] = value
-            # Push the constant's address onto the operand stack
+
+            # Push the constant's address and type onto the operand stack
             self.operand_stack.push(address)
             self.type_stack.push(var_type)
+
             return var_type
-        elif ctx.expresion():
+
+        elif ctx.expresion():  # Expression
+            # Recursively check the expression type, Check next in hierarchy
             return self.get_expression_type(ctx.expresion())
+
         else:
             print("Error: Invalid factor.")
             return "error"
-
 
     def create_temp_quadruple(self, left_type, right_type, operator, result_type):
         """
         Create a temporary quadruple for intermediate operations, allocate memory, and update stacks.
         """
         try:
+            # Pop the right and left operands from the operand stack
             right_operand = self.operand_stack.pop()
             left_operand = self.operand_stack.pop()
+
             # Allocate a temporary address for the result
             temp_address = self.virtual_memory.get_temp_address(result_type)
+
             # Initialize the temporary variable in memory
-            if result_type == 'entero':
+            if result_type == "entero":
                 self.virtual_memory.set_value(temp_address, 0)
-            elif result_type == 'flotante':
+
+            elif result_type == "flotante":
                 self.virtual_memory.set_value(temp_address, 0.0)
-            elif result_type == 'bool':
+
+            elif result_type == "bool":
                 self.virtual_memory.set_value(temp_address, False)
+
             else:
                 self.virtual_memory.set_value(temp_address, None)
+
             # Push the temporary address onto the operand and type stacks
             self.operand_stack.push(temp_address)
             self.type_stack.push(result_type)
+
             # Generate the quadruple using addresses
             quadruple = (operator, left_operand, right_operand, temp_address)
             self.quadruple_manager.push(quadruple)
+
+            # Print the generated quadruple
             if self.print_traversal:
                 print(f"Generated temp quadruple: {quadruple}")
+
         except Exception as e:
             print(f"Error creating temporary quadruple: {e}")
-
 
     # ************************************** PRINT STATEMENT **************************************#
     # Method for imprime (print) statement
     def exitImprime(self, ctx: little_duckParser.ImprimeContext):
+
+        # Get the list of items to print
         print_items = ctx.print_list().print_item()
-        for item in print_items:
-            if item.expresion():
-                expr_type = self.get_expression_type(item.expresion())
+
+        for item in print_items:  # Iterate over each item to print
+
+            if item.expresion():  # Expression
+                expr_type = self.get_expression_type(
+                    item.expresion()
+                )  # Get the type of the expression
+
+                # Check if the expression type is not 'error'
                 if expr_type != "error":
-                    expr_operand = self.operand_stack.pop()
-                    quadruple = ("print", expr_operand, None, None)
-                    self.quadruple_manager.push(quadruple)
+                    expr_operand = (
+                        self.operand_stack.pop()
+                    )  # Pop the operand from the operand stack
+                    quadruple = (
+                        "print",
+                        expr_operand,
+                        None,
+                        None,
+                    )  # Generate the quadruple for printing
+                    self.quadruple_manager.push(
+                        quadruple
+                    )  # Push the quadruple to the quadruple manager
+
+                    # Print the generated quadruple
                     if self.print_traversal:
-                        print(f"Generated quadruple for printing expression: {quadruple}")
+                        print(
+                            f"Generated quadruple for printing expression: {quadruple}"
+                        )
+
                 else:
                     print("Error: Cannot print an expression with type 'error'.")
+
             elif item.STRING_LITERAL():
-                string_value = item.STRING_LITERAL().getText()
-                string_value = string_value[1:-1]
-                address = self.virtual_memory.get_constant_address(string_value, "string")
-                quadruple = ("print_str", address, None, None)
-                self.quadruple_manager.push(quadruple)
+                # Get the string value from the STRING_LITERAL token
+                string_value = (
+                    item.STRING_LITERAL().getText()
+                )  # Get the text of the string literal
+                string_value = string_value[1:-1]  # Remove the quotes from the string
+                address = self.virtual_memory.get_constant_address(
+                    string_value, "string"
+                )  # Get the address of the string
+                quadruple = (
+                    "print_str",
+                    address,
+                    None,
+                    None,
+                )  # Generate the quadruple for printing the string
+                self.quadruple_manager.push(
+                    quadruple
+                )  # Push the quadruple to the quadruple manager
+
+                # Print the generated quadruple
                 if self.print_traversal:
                     print(f"Generated quadruple for printing string: {quadruple}")
+
             else:
                 print("Error: Invalid print item encountered.")
 
