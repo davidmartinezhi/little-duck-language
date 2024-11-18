@@ -48,7 +48,7 @@ def main(argv):
     tree = parser.programa()  # 'programa' is the initial symbol of the grammar
 
     # Initialize the custom listener for semantic analysis
-    listener = LittleDuckCustomListener(print_traversal=True)  # Set print_traversal to True to print the traversal
+    listener = LittleDuckCustomListener(print_traversal=False)  # Set print_traversal to True to print the traversal
 
     # Walk the parse tree with the custom listener to perform semantic actions
     walker = ParseTreeWalker()
@@ -66,7 +66,7 @@ def main(argv):
     # # Print the memory state before execution
     # print("\nMemory State Before Execution:")
     # virtual_memory.print_memory()
-    print("\nRunning program:")
+    # print("\nRunning program:")
     # Initialize and run the virtual machine
     vm = VirtualMachine(quadruples, virtual_memory)
     vm.run()
