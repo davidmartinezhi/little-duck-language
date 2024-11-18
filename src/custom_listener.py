@@ -133,7 +133,7 @@ class LittleDuckCustomListener(little_duckListener):
 
             # Check if the variable is already declared in the current scope
             if var_name in self.variable_table.variables[self.current_scope]:
-                print(
+                raise Exception(
                     f"Error: Variable '{var_name}' is already declared in scope '{self.current_scope}'."
                 )
 
@@ -174,7 +174,7 @@ class LittleDuckCustomListener(little_duckListener):
 
         # Check if the variable is declared
         if not scope:
-            print(f"Error: Variable '{var_name}' is not declared.")
+            raise Exception(f"Error: Variable '{var_name}' is not declared.")
 
         # If the variable is declared
         else:
@@ -210,7 +210,7 @@ class LittleDuckCustomListener(little_duckListener):
                     print(f"Generated quadruple: {quadruple}")
 
             except TypeError as e:
-                print(f"Type mismatch in assignment to variable '{var_name}'. {str(e)}")
+                raise Exception(f"Type mismatch in assignment to variable '{var_name}'. {str(e)}")
 
     # ************************************** CONDITIONAL STATEMENTS **************************************#
     # Conditional statement - si (if)
@@ -233,7 +233,7 @@ class LittleDuckCustomListener(little_duckListener):
 
         # Check if the type of the expression is not boolean
         if expr_type != "bool":
-            print("Error: Condition expression must be of type 'bool'.")
+            raise Exception("Error: Condition expression must be of type 'bool'.")
 
         # If the type of the expression is boolean
         else:
@@ -391,7 +391,7 @@ class LittleDuckCustomListener(little_duckListener):
 
         # Check if the expression is not boolean
         if expr_type != "bool":
-            print("Error: Loop condition expression must be of type 'bool'.")
+            raise Exception("Error: Loop condition expression must be of type 'bool'.")
 
         # If the expression is boolean
         else:
@@ -489,7 +489,7 @@ class LittleDuckCustomListener(little_duckListener):
                 return result_type
 
             except TypeError as e:
-                print(
+                raise Exception(
                     f"Error: Incompatible types in expression: {left_type} {operator} {right_type}. {str(e)}"
                 )
                 return "error"
@@ -532,7 +532,7 @@ class LittleDuckCustomListener(little_duckListener):
                 return result_type
 
             except TypeError as e:
-                print(
+                raise Exception(
                     f"Error: Incompatible types in expression: {left_type} {operator} {right_type}. {str(e)}"
                 )
                 return "error"
@@ -573,7 +573,7 @@ class LittleDuckCustomListener(little_duckListener):
                 return result_type
 
             except TypeError as e:
-                print(
+                raise Exception(
                     f"Error: Incompatible types in term: {left_type} {operator} {right_type}. {str(e)}"
                 )
                 return "error"
@@ -602,7 +602,7 @@ class LittleDuckCustomListener(little_duckListener):
                 return var_type
 
             else:
-                print(f"Error: Variable '{var_name}' is not declared.")
+                raise Exception(f"Error: Variable '{var_name}' is not declared.")
                 return "error"
 
         elif ctx.cte():  # Constant
@@ -617,7 +617,7 @@ class LittleDuckCustomListener(little_duckListener):
                 value = float(value)  # Convert to float
 
             else:
-                print("Error: Invalid constant.")
+                raise Exception("Error: Invalid constant.")
                 return "error"
 
             # Allocate or get the address of the constant
@@ -638,7 +638,7 @@ class LittleDuckCustomListener(little_duckListener):
             return self.get_expression_type(ctx.expresion())
 
         else:
-            print("Error: Invalid factor.")
+            raise Exception("Error: Invalid factor.")
             return "error"
 
     def create_temp_quadruple(self, left_type, right_type, operator, result_type):
@@ -679,7 +679,7 @@ class LittleDuckCustomListener(little_duckListener):
                 print(f"Generated temp quadruple: {quadruple}")
 
         except Exception as e:
-            print(f"Error creating temporary quadruple: {e}")
+            raise Exception(f"Error creating temporary quadruple: {e}")
 
     # ************************************** PRINT STATEMENT **************************************#
     # Method for imprime (print) statement
@@ -708,7 +708,7 @@ class LittleDuckCustomListener(little_duckListener):
                     if self.print_traversal:
                         print(f"Generated quadruple for printing expression: {quadruple}")
                 else:
-                    print("Error: Cannot print an expression with type 'error'.")
+                    raise Exception("Error: Got an error in expression validation.")
             
             # Check if the item is a variable
             elif item.STRING_LITERAL():
@@ -723,7 +723,7 @@ class LittleDuckCustomListener(little_duckListener):
                     print(f"Generated quadruple for printing string: {quadruple}")
             
             else:
-                print("Error: Invalid print item encountered.")
+                raise Exception("Error: Invalid print item encountered.")
 
         # After all items, add a 'print_newline' quadruple
         quadruple = ("print_newline", None, None, None)
