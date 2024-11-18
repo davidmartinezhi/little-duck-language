@@ -8,10 +8,21 @@ and runs the virtual machine to execute the program.
 
 import sys
 from antlr4 import *
-from generated.little_duckLexer import little_duckLexer  # Generated lexer for Little Duck language
-from generated.little_duckParser import little_duckParser  # Generated parser for Little Duck language
-from src.custom_listener import LittleDuckCustomListener  # Importing the custom listener for semantic analysis
-from semantics.virtual_machine import VirtualMachine  # Importing the VirtualMachine class
+from generated.little_duckLexer import (
+    little_duckLexer,
+)  # Generated lexer for Little Duck language
+from generated.little_duckParser import (
+    little_duckParser,
+)  # Generated parser for Little Duck language
+from src.custom_listener import (
+    LittleDuckCustomListener,
+)  # Importing the custom listener for semantic analysis
+from src.custom_error_listener import (
+    LittleDuckErrorListener,
+)  # Importing the custom error listener
+from semantics.virtual_machine import (
+    VirtualMachine,
+)  # Importing the VirtualMachine class
 
 
 def main(argv):
@@ -35,20 +46,27 @@ def main(argv):
     lexer = little_duckLexer(input_stream)  # Converts input text into tokens
 
     # Create a stream of tokens from the lexer output
-    token_stream = CommonTokenStream(lexer)  # Wraps the lexer output into a token stream for the parser
+    token_stream = CommonTokenStream(
+        lexer
+    )  # Wraps the lexer output into a token stream for the parser
 
     # Initialize the parser with the token stream (uses the tokens to create a parse tree)
     parser = little_duckParser(token_stream)  # Instance of the parser
 
-    # Add error handling (optional)
+    # Remove default error listeners
     parser.removeErrorListeners()
-    parser.addErrorListener(DiagnosticErrorListener())
+
+    # Add the custom error listener
+    error_listener = LittleDuckErrorListener()
+    parser.addErrorListener(error_listener)
 
     # Start parsing the input according to the grammar rule 'programa' (the entry point of the grammar)
     tree = parser.programa()  # 'programa' is the initial symbol of the grammar
 
     # Initialize the custom listener for semantic analysis
-    listener = LittleDuckCustomListener(print_traversal=False)  # Set print_traversal to True to print the traversal
+    listener = LittleDuckCustomListener(
+        print_traversal=False
+    )  # Set print_traversal to True to print the traversal
 
     # Walk the parse tree with the custom listener to perform semantic actions
     walker = ParseTreeWalker()
@@ -70,7 +88,6 @@ def main(argv):
     # Initialize and run the virtual machine
     vm = VirtualMachine(quadruples, virtual_memory)
     vm.run()
-
 
 
 if __name__ == "__main__":
