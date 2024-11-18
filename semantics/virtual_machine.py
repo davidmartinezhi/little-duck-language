@@ -48,6 +48,8 @@ class VirtualMachine:
                 self.handle_print(quad)
             elif op == "print_str":
                 self.handle_print_str(quad)
+            elif op == 'print_newline':
+                self.handle_print_newline(quad)
             elif op == "END":
                 break
             else:
@@ -205,7 +207,7 @@ class VirtualMachine:
         value = self.virtual_memory.get_value(
             value_address
         )  # Get the value from the address
-        print(value)  # Print the value
+        print(value, end='')  # Print the value
         self.IP += 1  # Move to the next quadruple
 
     def handle_print_str(self, quad):
@@ -219,5 +221,12 @@ class VirtualMachine:
         string_value = self.virtual_memory.get_value(
             string_address
         )  # Get the string from the address
-        print(string_value)  # Print the string
+        print(string_value, end='')  # Print the string
         self.IP += 1  # Move to the next quadruple
+        
+    def handle_print_newline(self, quad):
+        """
+        Handles the 'print_newline' operation to output a newline character.
+        """
+        print()  # Print newline
+        self.IP += 1

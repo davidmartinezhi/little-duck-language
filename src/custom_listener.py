@@ -684,66 +684,55 @@ class LittleDuckCustomListener(little_duckListener):
     # ************************************** PRINT STATEMENT **************************************#
     # Method for imprime (print) statement
     def exitImprime(self, ctx: little_duckParser.ImprimeContext):
-
+        """
+        Exit the 'imprime' statement.
+        Generate quadruples for each item in the print list to be printed on the same line.
+        At the end, generate a 'print_newline' quadruple to add a newline.
+        """
         # Get the list of items to print
         print_items = ctx.print_list().print_item()
 
-        for item in print_items:  # Iterate over each item to print
-
-            if item.expresion():  # Expression
-                expr_type = self.get_expression_type(
-                    item.expresion()
-                )  # Get the type of the expression
-
-                # Check if the expression type is not 'error'
+        # Iterate over each item in the print list
+        for item in print_items:
+            
+            # Check if the item is an expression
+            if item.expresion():
+                expr_type = self.get_expression_type(item.expresion())
+                
                 if expr_type != "error":
-                    expr_operand = (
-                        self.operand_stack.pop()
-                    )  # Pop the operand from the operand stack
-                    quadruple = (
-                        "print",
-                        expr_operand,
-                        None,
-                        None,
-                    )  # Generate the quadruple for printing
-                    self.quadruple_manager.push(
-                        quadruple
-                    )  # Push the quadruple to the quadruple manager
-
+                    expr_operand = self.operand_stack.pop() # Pop the expression's operand
+                    quadruple = ("print", expr_operand, None, None) # Generate a 'print' quadruple
+                    self.quadruple_manager.push(quadruple) # Push the quadruple to the quadruple manager
+                    
                     # Print the generated quadruple
                     if self.print_traversal:
-                        print(
-                            f"Generated quadruple for printing expression: {quadruple}"
-                        )
-
+                        print(f"Generated quadruple for printing expression: {quadruple}")
                 else:
                     print("Error: Cannot print an expression with type 'error'.")
-
+            
+            # Check if the item is a variable
             elif item.STRING_LITERAL():
-                # Get the string value from the STRING_LITERAL token
-                string_value = (
-                    item.STRING_LITERAL().getText()
-                )  # Get the text of the string literal
-                string_value = string_value[1:-1]  # Remove the quotes from the string
-                address = self.virtual_memory.get_constant_address(
-                    string_value, "string"
-                )  # Get the address of the string
-                quadruple = (
-                    "print_str",
-                    address,
-                    None,
-                    None,
-                )  # Generate the quadruple for printing the string
-                self.quadruple_manager.push(
-                    quadruple
-                )  # Push the quadruple to the quadruple manager
-
+                string_value = item.STRING_LITERAL().getText() # Get the string value
+                string_value = string_value[1:-1]  # Remove the quotes
+                address = self.virtual_memory.get_constant_address(string_value, "string") # Get the address of the string
+                quadruple = ("print_str", address, None, None) # Generate a 'print_str' quadruple
+                self.quadruple_manager.push(quadruple) # Push the quadruple to the quadruple manager
+                
                 # Print the generated quadruple
                 if self.print_traversal:
                     print(f"Generated quadruple for printing string: {quadruple}")
-
+            
             else:
                 print("Error: Invalid print item encountered.")
+
+        # After all items, add a 'print_newline' quadruple
+        quadruple = ("print_newline", None, None, None)
+        self.quadruple_manager.push(quadruple)
+        
+        # Print the generated quadruple
+        if self.print_traversal:
+            print(f"Generated quadruple for printing newline: {quadruple}")
+
 
     # ************************************** SCOPE MANAGEMENT **************************************#
     def enterCuerpo(self, ctx: little_duckParser.CuerpoContext):
