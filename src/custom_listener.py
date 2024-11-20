@@ -102,6 +102,10 @@ class LittleDuckCustomListener(little_duckListener):
 
             # Print the memory addresses with their values
             self.virtual_memory.print_memory()
+            
+            print(f"Operand stack: {self.operand_stack.stack}")
+            print(f"Type stack: {self.type_stack.stack}")
+            
 
     # ************************************** VARIABLES **************************************#
     # Variable declaration - add variables to scope
@@ -193,6 +197,7 @@ class LittleDuckCustomListener(little_duckListener):
                 operand_address = (
                     self.operand_stack.pop()
                 )  # Retrieve the operand's address from the operand stack
+                self.type_stack.pop()  # Pop the operand's type from the type stack
                 var_address = self.variable_table.get_variable_address(
                     scope, var_name
                 )  # Get the variable's address
@@ -240,6 +245,7 @@ class LittleDuckCustomListener(little_duckListener):
             condition_result = (  # Pop the condition result from the operand stack
                 self.operand_stack.pop()
             )
+            self.type_stack.pop()  # Pop the operand's type from the type stack
 
             # Generate the GOTOF quadruple and push it to the quadruple manager
             quadruple = (
@@ -397,6 +403,7 @@ class LittleDuckCustomListener(little_duckListener):
         else:
             # Pop the condition result from the operand stack
             condition_result = self.operand_stack.pop()
+            self.type_stack.pop()  # Pop the operand's type from the type stack
 
             # Print the condition result
             if self.print_traversal:
@@ -484,7 +491,7 @@ class LittleDuckCustomListener(little_duckListener):
                 )
 
                 # Push the result onto the stacks
-                self.create_temp_quadruple(left_type, right_type, operator, result_type)
+                self.create_temp_quadruple(operator, result_type)
 
                 return result_type
 
@@ -527,7 +534,7 @@ class LittleDuckCustomListener(little_duckListener):
                     )
 
                 # Push the result onto the stacks
-                self.create_temp_quadruple(left_type, right_type, operator, result_type)
+                self.create_temp_quadruple(operator, result_type)
 
                 return result_type
 
@@ -569,7 +576,7 @@ class LittleDuckCustomListener(little_duckListener):
                     )
 
                 # Push the result onto the stacks
-                self.create_temp_quadruple(left_type, right_type, operator, result_type)
+                self.create_temp_quadruple(operator, result_type)
                 return result_type
 
             except TypeError as e:
@@ -641,7 +648,7 @@ class LittleDuckCustomListener(little_duckListener):
             raise Exception("Error: Invalid factor.")
             return "error"
 
-    def create_temp_quadruple(self, left_type, right_type, operator, result_type):
+    def create_temp_quadruple(self, operator, result_type):
         """
         Create a temporary quadruple for intermediate operations, allocate memory, and update stacks.
         """
@@ -649,6 +656,8 @@ class LittleDuckCustomListener(little_duckListener):
             # Pop the right and left operands from the operand stack
             right_operand = self.operand_stack.pop()
             left_operand = self.operand_stack.pop()
+            self.type_stack.pop()  # Pop the right operand's type
+            self.type_stack.pop()  # Pop the left operand's type
 
             # Allocate a temporary address for the result
             temp_address = self.virtual_memory.get_temp_address(result_type)
@@ -701,6 +710,7 @@ class LittleDuckCustomListener(little_duckListener):
                 
                 if expr_type != "error":
                     expr_operand = self.operand_stack.pop() # Pop the expression's operand
+                    self.type_stack.pop() # Pop the expression's type
                     quadruple = ("print", expr_operand, None, None) # Generate a 'print' quadruple
                     self.quadruple_manager.push(quadruple) # Push the quadruple to the quadruple manager
                     
