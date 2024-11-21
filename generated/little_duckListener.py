@@ -17,6 +17,15 @@ class little_duckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by little_duckParser#inicio.
+    def enterInicio(self, ctx:little_duckParser.InicioContext):
+        pass
+
+    # Exit a parse tree produced by little_duckParser#inicio.
+    def exitInicio(self, ctx:little_duckParser.InicioContext):
+        pass
+
+
     # Enter a parse tree produced by little_duckParser#vars.
     def enterVars(self, ctx:little_duckParser.VarsContext):
         pass
@@ -77,6 +86,15 @@ class little_duckListener(ParseTreeListener):
 
     # Exit a parse tree produced by little_duckParser#func_decl.
     def exitFunc_decl(self, ctx:little_duckParser.Func_declContext):
+        pass
+
+
+    # Enter a parse tree produced by little_duckParser#cuerpo_func.
+    def enterCuerpo_func(self, ctx:little_duckParser.Cuerpo_funcContext):
+        pass
+
+    # Exit a parse tree produced by little_duckParser#cuerpo_func.
+    def exitCuerpo_func(self, ctx:little_duckParser.Cuerpo_funcContext):
         pass
 
 

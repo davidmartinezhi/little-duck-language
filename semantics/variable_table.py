@@ -1,97 +1,102 @@
 class VariableTable:
     """
-    Class representing the variable table (symbol table) used in the compiler.
-    This table keeps track of all variables declared in different scopes along with their types and memory addresses.
+    Class representing the symbol table used by the compiler to manage variables.
+    It stores information about variables such as their type, scope, and memory address.
+
+    Attributes:
+        variables (dict): A dictionary where each key is a scope name,
+                          and each value is another dictionary mapping variable names
+                          to their attributes.
     """
 
     def __init__(self):
         """
-        Initializes the variable table with a global scope.
-        The 'variables' attribute is a dictionary where each key is a scope name, and the value is another dictionary
-        containing variable names as keys and their attributes (type and address) as values.
+        Initializes the VariableTable with an empty variables dictionary.
         """
-        self.variables = {"global": {}}
+        self.variables = {}
+        self.current_scope = "global"  # Default initial scope
 
-    def set_scope(self, scope):
+    def set_scope(self, scope_name):
         """
-        Adds a new scope to the variable table if it doesn't already exist.
+        Sets the current scope. If the scope doesn't exist, it is created.
 
         Args:
-            scope (str): The name of the scope to add.
+            scope_name (str): The name of the scope to set.
+        """
+        self.current_scope = scope_name
+        if scope_name not in self.variables:
+            self.variables[scope_name] = {}
+
+    def add_variable(self, scope, var_name, var_type, address):
+        """
+        Adds a variable to the symbol table.
+
+        Args:
+            scope (str): The scope of the variable ('global' or function name).
+            var_name (str): The name of the variable.
+            var_type (str): The type of the variable ('entero', 'flotante', 'bool').
+            address (int): The virtual memory address of the variable.
         """
         if scope not in self.variables:
             self.variables[scope] = {}
-
-    def add_variable(self, scope, name, var_type, address):
-        """
-        Adds a new variable to the variable table under the specified scope.
-
-        Args:
-            scope (str): The scope in which the variable is declared.
-            name (str): The name of the variable.
-            var_type (str): The data type of the variable (e.g., 'entero', 'flotante').
-            address (int): The virtual memory address assigned to the variable.
-
-        Raises:
-            Exception: If the variable is already declared in the given scope.
-        """
-        if name in self.variables[scope]:
-            raise Exception(f"Variable '{name}' is already declared in scope '{scope}'.")
-        self.variables[scope][name] = {
+        self.variables[scope][var_name] = {
             'type': var_type,
             'address': address
         }
 
-    def get_variable_type(self, scope, name):
+    def find_scope(self, var_name, current_scope):
         """
-        Retrieves the data type of a variable in the specified scope.
+        Finds the scope in which a variable is declared.
 
         Args:
-            scope (str): The scope where the variable is declared.
-            name (str): The name of the variable.
+            var_name (str): The name of the variable.
+            current_scope (str): The current scope.
 
         Returns:
-            str or None: The data type of the variable if found, otherwise None.
+            str: The scope where the variable is found, or None if not found.
         """
-        return self.variables[scope][name].get('type', None)
+        # Check current scope first
+        if var_name in self.variables.get(current_scope, {}):
+            return current_scope
 
-    def get_variable_address(self, scope, name):
+        # Check global scope
+        if var_name in self.variables.get("global", {}):
+            return "global"
+
+        return None
+
+    def get_variable_type(self, scope, var_name):
         """
-        Retrieves the virtual memory address of a variable in the specified scope.
+        Retrieves the type of a variable.
 
         Args:
-            scope (str): The scope where the variable is declared.
-            name (str): The name of the variable.
+            scope (str): The scope of the variable.
+            var_name (str): The name of the variable.
 
         Returns:
-            int or None: The virtual memory address of the variable if found, otherwise None.
+            str: The type of the variable.
         """
-        return self.variables[scope][name].get('address', None)
+        return self.variables[scope][var_name]['type']
+
+    def get_variable_address(self, scope, var_name):
+        """
+        Retrieves the memory address of a variable.
+
+        Args:
+            scope (str): The scope of the variable.
+            var_name (str): The name of the variable.
+
+        Returns:
+            int: The memory address of the variable.
+        """
+        return self.variables[scope][var_name]['address']
 
     def clean_variables(self, scope):
         """
-        Clears all variables in the specified scope.
-        This is useful when exiting a scope to remove local variables.
+        Cleans up all variables in a given scope.
 
         Args:
-            scope (str): The scope whose variables are to be cleared.
+            scope (str): The scope to clean.
         """
-        self.variables[scope].clear()
-
-    def find_scope(self, name, current_scope):
-        """
-        Searches for the scope in which a variable is declared.
-        It first checks the current scope, then the global scope.
-
-        Args:
-            name (str): The name of the variable to search for.
-            current_scope (str): The current scope during execution.
-
-        Returns:
-            str or None: The scope where the variable is found ('current_scope' or 'global'), or None if not found.
-        """
-        if name in self.variables.get(current_scope, {}):
-            return current_scope
-        elif name in self.variables.get("global", {}):
-            return "global"
-        return None
+        if scope in self.variables:
+            del self.variables[scope]

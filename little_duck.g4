@@ -2,7 +2,11 @@ grammar little_duck;
 
 /* Parser Rules */
 programa
-    : PROGRAMA ID SEMI vars funcs INICIO cuerpo FIN
+    : PROGRAMA ID SEMI vars funcs inicio
+    ;
+
+inicio
+    : INICIO cuerpo FIN
     ;
 
 vars
@@ -33,7 +37,11 @@ funcs
     ;
 
 func_decl
-    : FUNC ID LPAREN param_list RPAREN cuerpo
+    : FUNC ID LPAREN param_list RPAREN cuerpo_func
+    ;
+
+cuerpo_func
+    : LBRACE vars estatuto+ RBRACE
     ;
 
 param_list

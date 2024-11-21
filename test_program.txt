@@ -1,13 +1,34 @@
-programa test_while_loop;
+programa ejemplo;
 vars {
-    i : entero;
+    n: entero;
 }
-inicio {
-    i = 3;
-    si (i < 3) haz {
-        escribe(i, "Es menor a 3");
-    } sino haz {
-        escribe(i, "Es mayor o igual a 3");
+
+func imprimeNumero(numero : entero) {
+    vars {
+        m: entero;
+    }
+    escribe("El numero es: ", numero);
+    m = numero + 2;
+    escribe("m es: ", m);
+    mientras (m < 8) haz {
+        escribe("El numero es menor a 8: ", m);
+        m = m + 1;
     }
 }
+
+func imprimeNumeroOtraVez(numero: entero){
+    vars {
+        z: entero;
+    }
+    z = numero;
+    escribe("Imprimiendo numero otra vez : ", z);
+}
+
+inicio {
+    n = 1;
+    imprimeNumero(n);
+    imprimeNumeroOtraVez(n);
+    escribe("Programa terminado con exito. Grande David");
+}
 fin
+
