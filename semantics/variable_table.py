@@ -95,3 +95,14 @@ class VariableTable:
         elif name in self.variables.get("global", {}):
             return "global"
         return None
+
+    def clean_variables(self, scope):
+        """
+        Clears all variables in the specified scope.
+        This is useful when exiting a scope to remove local variables.
+
+        Args:
+            scope (str): The scope whose variables are to be cleared.
+        """
+        if scope in self.variables:
+            del self.variables[scope]

@@ -65,7 +65,7 @@ def main(argv):
 
     # Initialize the custom listener for semantic analysis
     listener = LittleDuckCustomListener(
-        print_traversal=False
+        print_traversal=True
     )  # Set print_traversal to True to print the traversal
 
     # Walk the parse tree with the custom listener to perform semantic actions
@@ -86,8 +86,8 @@ def main(argv):
     # virtual_memory.print_memory()
     # print("\nRunning program:")
     # Initialize and run the virtual machine
-    vm = VirtualMachine(quadruples, virtual_memory)
-    vm.run()
+    #vm = VirtualMachine(quadruples, virtual_memory)
+    #vm.run()
 
 
 if __name__ == "__main__":

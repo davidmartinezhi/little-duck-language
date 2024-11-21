@@ -5,6 +5,7 @@ from generated.little_duckListener import little_duckListener
 # Import semantic modules
 from semantics.semantic_cube import SemanticCube
 from semantics.variable_table import VariableTable
+from semantics.function_table import FunctionTable
 from semantics.stack import Stack
 from semantics.quadruple import Quadruple
 from semantics.virtual_memory import VirtualMemory
@@ -30,6 +31,9 @@ class LittleDuckCustomListener(little_duckListener):
         self.semantic_cube = (
             SemanticCube()
         )  # Semantic cube for type checking and operation validation
+        self.function_table = (
+            FunctionTable()
+        )  # Function table to store function attributes
         self.quadruple_manager = (
             Quadruple()
         )  # Manages quadruples (intermediate code representation)
@@ -52,6 +56,7 @@ class LittleDuckCustomListener(little_duckListener):
         )
         self.label_counter = 0  # Counter for generating unique labels
         self.jump_stack = Stack()  # Stack to manage jumps for conditional statements
+        self.current_function = None  # Tracks the current function being parsed
 
     # ************************************** PROGRAM **************************************#
     # Program entry and exit - scope management
@@ -65,11 +70,20 @@ class LittleDuckCustomListener(little_duckListener):
             self.current_scope
         )  # Set current scope to global scope
         program_name = ctx.ID().getText()  # Get program name from the text of the ID
+        
+        # Generate initial GOTO quadruple to jump to 'inicio' block
+        quadruple = ('GOTO', None, None, None)
+        self.quadruple_manager.push(quadruple)
+
+        # Push the index of this GOTO onto the jump stack to patch later
+        self.jump_stack.push(len(self.quadruple_manager.quadruples) - 1)
 
         if self.print_traversal:
             print("\n=============")
             print(f"Entering program: {program_name}")  # Print program name
             print("=============\n")
+            print(f"Generated initial GOTO quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}")   
+
 
     def exitPrograma(self, ctx: little_duckParser.ProgramaContext):
         """
@@ -144,17 +158,11 @@ class LittleDuckCustomListener(little_duckListener):
             # If the variable is not declared in the current scope
             else:
                 # Allocate memory address for the variable
-                address = self.virtual_memory.get_address(var_type, self.current_scope)
+                address = self.virtual_memory.get_address(var_type, 'global' if self.current_scope == 'global' else 'local')
                 # Add the variable to the variable table with its address
                 self.variable_table.add_variable(
                     self.current_scope, var_name, var_type, address
                 )
-
-                # Print the variable declaration information
-                if self.print_traversal:
-                    print(
-                        f"Variable declaration: {var_name} : {var_type}, Address: {address}"
-                    )
 
                 # Initialize the variable in virtual memory with default value
                 if var_type == "entero":
@@ -163,6 +171,12 @@ class LittleDuckCustomListener(little_duckListener):
                     self.virtual_memory.set_value(address, 0.0)
                 else:
                     self.virtual_memory.set_value(address, None)
+
+                # Print the variable declaration information
+                if self.print_traversal:
+                    print(
+                        f"Variable declaration: {var_name} : {var_type}, Address: {address}"
+                    )
 
     # ************************************** ASSIGNMENT **************************************#
     # Assignment statement
@@ -689,6 +703,153 @@ class LittleDuckCustomListener(little_duckListener):
 
         except Exception as e:
             raise Exception(f"Error creating temporary quadruple: {e}")
+    
+# ************************************** FUNCTION STATEMENT **************************************#
+    def enterFunc_decl(self, ctx: little_duckParser.Func_declContext):
+        """
+        Enter a function declaration.
+        Set up the function scope, record the function's starting quadruple index,
+        and process parameters.
+        """
+        func_name = ctx.ID().getText()  # Get the function name
+        self.current_scope = func_name  # Set the current scope to the function name
+        self.current_function = func_name  # Set the current function name
+
+        # Initialize the function scope in the variable table
+        self.variable_table.set_scope(self.current_scope)
+
+        # Initialize function information
+        self.function_table.add_function(func_name, len(self.quadruple_manager.quadruples))
+
+        # Generate FUNC_START quadruple
+        quadruple = ('FUNC_START', func_name, None, None)
+        self.quadruple_manager.push(quadruple)
+
+        # Print function entry
+        if self.print_traversal:
+            print(f"\nEntering function '{func_name}'")
+            print(f"Generated FUNC_START quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}")
+
+        # Push a new local memory onto the stack
+        self.virtual_memory.push_local_memory()
+
+        # Process parameters
+        if ctx.param_list():
+            params = ctx.param_list().param()
+            for param in params:
+                param_name = param.ID().getText()  # Get the parameter name
+                param_type = param.tipo().getText()  # Get the parameter type
+
+                # Allocate address for parameter
+                address = self.virtual_memory.get_address(param_type, 'local')  # Get the address of the parameter
+
+                # Add parameter to variable table
+                self.variable_table.add_variable(self.current_scope, param_name, param_type, address)  # Add the parameter to the variable table
+
+                # Add parameter to function table
+                self.function_table.add_parameter(func_name, param_name, param_type)  # Add the parameter to the function table
+
+                if self.print_traversal:
+                    print(f"Parameter: {param_name} : {param_type}, Address: {address}")
+
+
+    def exitFunc_decl(self, ctx: little_duckParser.Func_declContext):
+        """
+        Exit a function declaration.
+        Generate ENDFUNC quadruple and reset scope.
+        """
+        # Generate ENDFUNC quadruple
+        quadruple = ('ENDFUNC', None, None, None)
+        self.quadruple_manager.push(quadruple)
+
+        if self.print_traversal:
+            print(f"Generated ENDFUNC quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}")
+            print(f"Exiting function '{self.current_function}'\n")
+
+        # Pop local memory for the function
+        self.virtual_memory.pop_local_memory()
+
+        # Clean up variables in the function scope before resetting the scope
+        self.variable_table.clean_variables(self.current_scope)
+
+        # Reset scope
+        self.current_scope = 'global'
+        self.current_function = None
+
+        
+    def enterInicio(self, ctx: little_duckParser.InicioContext):
+        """
+        Enter the 'inicio' block.
+        Patch the initial GOTO quadruple to jump here.
+        """
+        # Pop the GOTO index from the jump stack
+        goto_index = self.jump_stack.pop()
+
+        # Patch the GOTO to point to the current quadruple index
+        self.quadruple_manager.quadruples[goto_index] = (
+            'GOTO', None, None, len(self.quadruple_manager.quadruples)
+        )
+
+        if self.print_traversal:
+            print(f"Patched initial GOTO at index {goto_index} to point to {len(self.quadruple_manager.quadruples)}")
+
+    def exitLlamada(self, ctx: little_duckParser.LlamadaContext):
+        """
+        Exit a function call.
+        Generate ERA, PARAM, and GOSUB quadruples.
+        """
+        func_name = ctx.ID().getText() # Get the function name
+
+        # Check if function exists
+        if func_name not in self.function_table.functions:
+            raise Exception(f"Error: Function '{func_name}' is not declared.")
+
+        function_info = self.function_table.get_function(func_name) # Get the function information
+        num_params = self.function_table.get_function_param_count(func_name) # Get the number of parameters
+
+        # Generate ERA quadruple
+        quadruple = ('ERA', func_name, None, None)
+        self.quadruple_manager.push(quadruple)
+
+        if self.print_traversal:
+            print(f"Generated ERA quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}")
+
+        # Handle arguments
+        arg_list = ctx.arg_list().expresion() if ctx.arg_list() else [] # Get the list of arguments
+        
+        # Check if the number of arguments matches the number of parameters
+        if len(arg_list) != num_params:
+            raise Exception(f"Error: Function '{func_name}' expects {num_params} arguments, but {len(arg_list)} were provided.")
+
+        # Iterate over each argument
+        for idx, arg_expr in enumerate(arg_list):
+            # Evaluate argument expression
+            arg_type = self.get_expression_type(arg_expr) # Get the type of the argument expression
+            arg_operand = self.operand_stack.pop() # Pop the argument's operand
+            self.type_stack.pop() # Pop the argument's type
+
+            param_name, param_type = function_info['params'][idx] # Get the parameter name and type
+
+            # Type checking
+            if arg_type != param_type: # Check if the argument type matches the parameter type
+                raise Exception(f"Error: Type mismatch in argument {idx+1} of function '{func_name}': expected '{param_type}', got '{arg_type}'.")
+
+            # Generate PARAM quadruple
+            quadruple = ('PARAM', arg_operand, None, idx) # Generate a 'PARAM' quadruple
+            self.quadruple_manager.push(quadruple)
+
+            if self.print_traversal:
+                print(f"Generated PARAM quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}")
+
+        # Generate GOSUB quadruple
+        func_start_quad = function_info['quad_start']
+        quadruple = ('GOSUB', func_name, None, func_start_quad)
+        self.quadruple_manager.push(quadruple)
+
+        if self.print_traversal:
+            print(f"Generated GOSUB quadruple at index {len(self.quadruple_manager.quadruples) - 1}: {quadruple}")
+
+        # No need to handle return values as functions are void
 
     # ************************************** PRINT STATEMENT **************************************#
     # Method for imprime (print) statement

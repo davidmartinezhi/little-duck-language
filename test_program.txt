@@ -1,13 +1,22 @@
-programa test_while_loop;
+programa ejemplo;
 vars {
-    i : entero;
+    n: entero;
 }
-inicio {
-    i = 3;
-    si (i < 3) haz {
-        escribe(i, "Es menor a 3");
-    } sino haz {
-        escribe(i, "Es mayor o igual a 3");
+
+func imprimeNumero(numero : entero) {
+    vars {
+        m: entero;
+    }
+    escribe("El numero es: ", numero);
+    m = numero + 2;
+    si (m < 8) haz {
+        escribe("El numero es menor a 8");
     }
 }
+
+inicio {
+    n = 5;
+    imprimeNumero(n);
+}
 fin
+

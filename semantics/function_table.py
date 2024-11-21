@@ -15,7 +15,7 @@ class FunctionTable:
         """
         self.functions = {}
 
-    def add_function(self, func_id):
+    def add_function(self, func_id, quad_start):
         """
         Adds a new function to the function table.
 
@@ -35,10 +35,9 @@ class FunctionTable:
             raise Exception(f"Function {func_id} already declared.")
         # Add the function to the function table with its attributes
         self.functions[func_id] = {
-            "params": {},          # Dictionary of parameters (param_name: param_type)
-            "quad_count": 0,       # Quadruple count for code generation
+            "params": [],          # Dictionary of parameters (param_name: param_type)
+            "quad_start": quad_start,       # Quadruple count for code generation
         }
-        return True
 
     def get_function(self, func_id):
         """
@@ -55,7 +54,7 @@ class FunctionTable:
         """
         return self.functions.get(func_id, None)
 
-    def add_function_param(self, func_id: str | None, param):
+    def add_parameter(self, func_id: str | None, param_name, param_type):
         """
         Adds a new parameter to a function in the functions dictionary.
 
@@ -75,12 +74,11 @@ class FunctionTable:
             raise Exception(f"Function {func_id} not declared.")
 
         # Check that parameter name has not been declared before
-        if param["name"] in self.functions[func_id]["params"]:
+        if param_name in self.functions[func_id]["params"]:
             raise Exception(f"Parameter {func_id} previously declared in the function.")
 
         # Add parameter
-        self.functions[func_id]["params"][param["name"]] = param["type"]
-        return True
+        self.functions[func_id]["params"].append((param_name,param_type))
 
 
     def get_function_params(self, func_id):

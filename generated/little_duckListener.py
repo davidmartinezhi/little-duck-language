@@ -17,6 +17,15 @@ class little_duckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by little_duckParser#inicio.
+    def enterInicio(self, ctx:little_duckParser.InicioContext):
+        pass
+
+    # Exit a parse tree produced by little_duckParser#inicio.
+    def exitInicio(self, ctx:little_duckParser.InicioContext):
+        pass
+
+
     # Enter a parse tree produced by little_duckParser#vars.
     def enterVars(self, ctx:little_duckParser.VarsContext):
         pass
