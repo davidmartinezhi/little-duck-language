@@ -1,5 +1,3 @@
-# virtual_memory.py
-
 class VirtualMemory:
     """
     Class representing the virtual memory of the compiler.
