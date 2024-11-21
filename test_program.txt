@@ -28,6 +28,7 @@ inicio {
     n = 1;
     imprimeNumero(n);
     imprimeNumeroOtraVez(n);
+    escribe("Programa terminado con exito. Grande David");
 }
 fin
 

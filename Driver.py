@@ -31,20 +31,37 @@ def main(argv):
         print("Usage: python3 Driver.py <input_file>")
         return
 
+    # Load the input file provided as a command-line argument and create an input stream
     input_file = argv[1]
     input_stream = FileStream(input_file)
 
+    # Initialize the lexer with the input stream (breaks the input into tokens)
     lexer = little_duckLexer(input_stream)
+
+    # Create a stream of tokens from the lexer output
     stream = CommonTokenStream(lexer)
+
+    # Initialize the parser with the token stream (uses the tokens to create a parse tree)
     parser = little_duckParser(stream)
+
+    # Remove default error listeners
+    parser.removeErrorListeners()
+
+    # Add the custom error listener
+    error_listener = LittleDuckErrorListener()
+    parser.addErrorListener(error_listener)
+
+    # Start parsing the input according to the grammar rule 'programa' (the entry point of the grammar)
     tree = parser.programa()
 
     # Initialize the custom listener with traversal printing enabled
     listener = LittleDuckCustomListener(print_traversal=False)
+
+    # Walk the parse tree with the custom listener to perform semantic actions
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
 
-    # Retrieve the quadruples and virtual memory
+    # Retrieve the quadruples, virtual memory and function table
     quadruples = listener.quadruple_manager.quadruples
     virtual_memory = listener.virtual_memory
     function_table = listener.function_table
