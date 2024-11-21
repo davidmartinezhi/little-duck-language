@@ -40,7 +40,7 @@ def main(argv):
     tree = parser.programa()
 
     # Initialize the custom listener with traversal printing enabled
-    listener = LittleDuckCustomListener(print_traversal=True)
+    listener = LittleDuckCustomListener(print_traversal=False)
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
 
@@ -50,7 +50,6 @@ def main(argv):
     function_table = listener.function_table
 
     # Initialize and run the virtual machine
-    print("Running program:")
     vm = VirtualMachine(quadruples, virtual_memory, function_table, print_traversal=False)
     vm.run()
 

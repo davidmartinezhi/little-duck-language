@@ -1,5 +1,3 @@
-# variable_table.py
-
 class VariableTable:
     """
     Class representing the symbol table used by the compiler to manage variables.

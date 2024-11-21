@@ -1,5 +1,3 @@
-# custom_listener.py
-
 from antlr4 import *
 from generated.little_duckParser import little_duckParser
 from generated.little_duckListener import little_duckListener
