@@ -16,9 +16,18 @@ func imprimeNumero(numero : entero) {
     }
 }
 
+func imprimeNumeroOtraVez(numero: entero){
+    vars {
+        z: entero;
+    }
+    z = numero;
+    escribe("Imprimiendo numero otra vez : ", z);
+}
+
 inicio {
     n = 1;
     imprimeNumero(n);
+    imprimeNumeroOtraVez(n);
 }
 fin
 
