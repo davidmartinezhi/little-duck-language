@@ -1,3 +1,5 @@
+# virtual_memory.py
+
 class VirtualMemory:
     """
     Class representing the virtual memory of the compiler.
@@ -34,7 +36,7 @@ class VirtualMemory:
 
         # Constants table to avoid duplicates
         self.constants_table = {}
-        
+
         # Address counters for local memory
         self.local_int = self.local_int_start
         self.local_float = self.local_float_start
@@ -62,7 +64,7 @@ class VirtualMemory:
 
             elif var_type == "bool":  # Bool
                 address = self.global_bool
-                self.global_bool +=1
+                self.global_bool += 1
 
             else:
                 raise Exception(f"Unknown variable type '{var_type}' in global memory allocation.")
@@ -116,6 +118,13 @@ class VirtualMemory:
     def get_constant_address(self, value, var_type):
         """
         Allocates a virtual address for a constant value. If the constant already exists, returns its address.
+
+        Args:
+            value: The constant value.
+            var_type (str): The type of the constant ('entero', 'flotante', 'string', 'bool').
+
+        Returns:
+            int: The virtual address of the constant.
         """
         if value in self.constants_table:  # Check if the constant already exists
             existing_address = self.constants_table[value]
@@ -163,10 +172,19 @@ class VirtualMemory:
             self.global_memory[address] = value  # Set the value
 
         elif self.is_in_local_memory(address):  # Local memory
-            self.local_memory_stack[-1][address] = value  # Set the value in the current local frame
+            # Iterate through all local memory frames to find the address
+            for local_mem in reversed(self.local_memory_stack):
+                if address in local_mem:
+                    local_mem[address] = value
+                    break
+            else:
+                raise Exception(f"Address {address} not found in any local memory frame.")
 
         elif address in self.temp_memory:  # Temporary memory
             self.temp_memory[address] = value  # Set the value
+
+        elif address in self.constants_memory:  # Constants memory
+            raise Exception(f"Cannot modify constant address {address}.")
 
         else:
             raise Exception(f"Address {address} not found in any memory segment.")
@@ -174,12 +192,22 @@ class VirtualMemory:
     def get_value(self, address):
         """
         Retrieves the value stored at a given virtual address.
+
+        Args:
+            address (int): The virtual address.
+
+        Returns:
+            The value stored at the given address.
         """
         if address in self.global_memory:  # Global memory
             return self.global_memory[address]  # Return the value
 
         elif self.is_in_local_memory(address):
-            return self.local_memory_stack[-1][address]
+            # Iterate through all local memory frames to find the address
+            for local_mem in reversed(self.local_memory_stack):
+                if address in local_mem:
+                    return local_mem[address]
+            raise Exception(f"Address {address} not found in any local memory frame.")
 
         elif address in self.temp_memory:  # Temporary memory
             return self.temp_memory[address]  # Return the value
@@ -200,8 +228,8 @@ class VirtualMemory:
             print(f"Address {address}: {value}")
 
         print("\n===== Local Memory =====")
-        for frame_idx, local_mem in enumerate(self.local_memory_stack):
-            print(f"Frame {frame_idx}:")
+        for idx, local_mem in enumerate(self.local_memory_stack):
+            print(f"Frame {idx}:")
             for address, value in sorted(local_mem.items()):
                 print(f"  Address {address}: {value}")
 
@@ -226,24 +254,28 @@ class VirtualMemory:
     def pop_local_memory(self):
         """
         Pops the local memory dictionary from the stack.
+        Note: This method has been modified to **not remove** the local memory frames to retain addresses.
         """
-        if self.local_memory_stack:
-            self.local_memory_stack.pop()
-        else:
-            raise Exception("Local memory stack underflow.")
+        # Commenting out the pop to retain local memory frames
+        # if self.local_memory_stack:
+        #     self.local_memory_stack.pop()
+        # else:
+        #     raise Exception("Local memory stack underflow.")
+        pass  # Do nothing to retain local memory frames
 
     def is_in_local_memory(self, address):
         """
-        Checks if an address exists in the current local memory frame.
+        Checks if an address exists in any local memory frame.
 
         Args:
             address (int): The virtual address.
 
         Returns:
-            bool: True if address is in local memory, False otherwise.
+            bool: True if address is in any local memory frame, False otherwise.
         """
-        if self.local_memory_stack:
-            return address in self.local_memory_stack[-1]
+        for local_mem in self.local_memory_stack:
+            if address in local_mem:
+                return True
         return False
 
     def get_type_by_address(self, address):

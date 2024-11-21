@@ -9,13 +9,15 @@ func imprimeNumero(numero : entero) {
     }
     escribe("El numero es: ", numero);
     m = numero + 2;
-    si (m < 8) haz {
-        escribe("El numero es menor a 8");
+    escribe("m es: ", m);
+    mientras (m < 8) haz {
+        escribe("El numero es menor a 8: ", m);
+        m = m + 1;
     }
 }
 
 inicio {
-    n = 5;
+    n = 1;
     imprimeNumero(n);
 }
 fin

@@ -37,7 +37,11 @@ funcs
     ;
 
 func_decl
-    : FUNC ID LPAREN param_list RPAREN cuerpo
+    : FUNC ID LPAREN param_list RPAREN cuerpo_func
+    ;
+
+cuerpo_func
+    : LBRACE vars estatuto+ RBRACE
     ;
 
 param_list

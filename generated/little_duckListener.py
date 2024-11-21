@@ -89,6 +89,15 @@ class little_duckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by little_duckParser#cuerpo_func.
+    def enterCuerpo_func(self, ctx:little_duckParser.Cuerpo_funcContext):
+        pass
+
+    # Exit a parse tree produced by little_duckParser#cuerpo_func.
+    def exitCuerpo_func(self, ctx:little_duckParser.Cuerpo_funcContext):
+        pass
+
+
     # Enter a parse tree produced by little_duckParser#param_list.
     def enterParam_list(self, ctx:little_duckParser.Param_listContext):
         pass

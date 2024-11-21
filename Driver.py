@@ -25,71 +25,34 @@ from semantics.virtual_machine import (
 )  # Importing the VirtualMachine class
 
 
+
 def main(argv):
-    """
-    Main function that handles the input stream, tokenizes it, parses it,
-    performs semantic analysis using the custom listener, and runs the virtual machine.
+    if len(argv) != 2:
+        print("Usage: python3 Driver.py <input_file>")
+        return
 
-    Args:
-        argv (list): List of command-line arguments.
-                     The first argument (argv[1]) should be the path to the input file.
-    """
-    if len(argv) < 2:
-        print("Usage: python3 driver.py <input_file>")
-        sys.exit(1)
-
-    # Load the input file provided as a command-line argument and create an input stream
     input_file = argv[1]
     input_stream = FileStream(input_file)
 
-    # Initialize the lexer with the input stream (breaks the input into tokens)
-    lexer = little_duckLexer(input_stream)  # Converts input text into tokens
+    lexer = little_duckLexer(input_stream)
+    stream = CommonTokenStream(lexer)
+    parser = little_duckParser(stream)
+    tree = parser.programa()
 
-    # Create a stream of tokens from the lexer output
-    token_stream = CommonTokenStream(
-        lexer
-    )  # Wraps the lexer output into a token stream for the parser
-
-    # Initialize the parser with the token stream (uses the tokens to create a parse tree)
-    parser = little_duckParser(token_stream)  # Instance of the parser
-
-    # Remove default error listeners
-    parser.removeErrorListeners()
-
-    # Add the custom error listener
-    error_listener = LittleDuckErrorListener()
-    parser.addErrorListener(error_listener)
-
-    # Start parsing the input according to the grammar rule 'programa' (the entry point of the grammar)
-    tree = parser.programa()  # 'programa' is the initial symbol of the grammar
-
-    # Initialize the custom listener for semantic analysis
-    listener = LittleDuckCustomListener(
-        print_traversal=True
-    )  # Set print_traversal to True to print the traversal
-
-    # Walk the parse tree with the custom listener to perform semantic actions
+    # Initialize the custom listener with traversal printing enabled
+    listener = LittleDuckCustomListener(print_traversal=True)
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
 
-    # After parsing and semantic analysis, retrieve the quadruples and virtual memory
+    # Retrieve the quadruples and virtual memory
     quadruples = listener.quadruple_manager.quadruples
     virtual_memory = listener.virtual_memory
+    function_table = listener.function_table
 
-    # Print the generated quadruples
-    # print("\nGenerated Quadruples:")
-    # for idx, quad in enumerate(quadruples):
-    #     print(f"{idx}: {quad}")
-
-    # # Print the memory state before execution
-    # print("\nMemory State Before Execution:")
-    # virtual_memory.print_memory()
-    # print("\nRunning program:")
     # Initialize and run the virtual machine
-    #vm = VirtualMachine(quadruples, virtual_memory)
-    #vm.run()
+    print("Running program:")
+    vm = VirtualMachine(quadruples, virtual_memory, function_table, print_traversal=False)
+    vm.run()
 
-
-if __name__ == "__main__":
-    # Call the main function with the command-line arguments
-    main(sys.argv)  # Usage: python3 driver.py test_program.ld
+if __name__ == '__main__':
+    main(sys.argv)
